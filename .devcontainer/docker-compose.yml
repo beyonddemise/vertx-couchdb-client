@@ -1,0 +1,37 @@
+version: "3.8"
+services:
+  app:
+    container_name: vertx-couchdb
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../..:/workspaces:cached
+    volumes_from:
+      - couchdb:rw
+    command: sleep infinity
+    network_mode: service:couchdb
+    depends_on:
+      - couchdb
+  couchdb:
+    image: couchdb:latest
+    container_name: couchdb
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+# Uncomment the following lines to persist data
+#     volumes:
+#       - type: volume
+#         source: couchdb_etc
+#         target: /opt/couchdb/etc
+#       - type: volume
+#         source: couchdb_data
+#         target: /opt/couchdb/data
+#       - type: volume
+#         source: couchdb_logs
+#         target: /opt/couchdb/logs
+#     restart: unless-stopped
+# volumes:
+#   couchdb_data:
+#   couchdb_etc:
+#   couchdb_logs:

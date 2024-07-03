@@ -1,0 +1,78 @@
+{
+  "name": "Vert.x ClouchDB Client development",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "none",
+      "installMaven": "true"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "oderwat.indent-rainbow",
+        "asciidoctor.asciidoctor-vscode",
+        "dgileadi.java-decompiler",
+        "onjayamanne.git-extension-pack",
+        "donjayamanne.githistory",
+        "editorconfig.editorconfig",
+        "formulahendry.docker-explorer",
+        "formulahendry.docker-extension-pack",
+        "hbenl.vscode-test-explorer",
+        "hbenl.vscode-test-explorer-liveshare",
+        "redhat.java",
+        "shengchen.vscode-checkstyle",
+        "vscjava.vscode-java-debug",
+        "vscjava.vscode-java-dependency",
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-java-test",
+        "vscjava.vscode-maven"
+      ],
+      "settings": {
+        "editor.fontSize": 14,
+        "editor.fontFamily": "'Jetbrains Mono', Menlo, Monaco, 'Courier New', monospace",
+        "editor.fontLigatures": true,
+        "editor.formatOnSave": true,
+        "editor.suggestSelection": "first",
+        "editor.tabCompletion": "on",
+        "editor.wordWrap": "on",
+        "diffEditor.codeLens": true,
+        "java.autobuild.enabled": true,
+        "java.checkstyle.configuration": "file:///workspaces/${localWorkspaceFolderBasename}/eclipse-java-couchdb-style.xml",
+        "java.format.settings.url": "file:////workspaces/${localWorkspaceFolderBasename}/eclipse-java-couchdb-style.xml",
+        "java.format.settings.profile": "KeepStyle",
+        "java.codeGeneration.generateComments": true,
+        "java.codeGeneration.hashCodeEquals.useJava7Objects": true,
+        "java.codeGeneration.toString.codeStyle": "STRING_BUILDER",
+        "java.codeGeneration.toString.skipNullValues": true,
+        "java.codeGeneration.useBlocks": true,
+        "java.completion.enabled": true,
+        "java.completion.guessMethodArguments": "auto",
+        "java.import.generatesMetadataFilesAtProjectRoot": true,
+        "java.configuration.maven.globalSettings": "",
+        "java.configuration.updateBuildConfiguration": "interactive",
+        "java.eclipse.downloadSources": true,
+        "java.implementationsCodeLens.enabled": true,
+        "java.maven.downloadSources": true,
+        "java.maven.updateSnapshots": true,
+        "java.maxConcurrentBuilds": 2,
+        "java.referencesCodeLens.enabled": true,
+        "java.server.launchMode": "Standard",
+        "java.showBuildStatusOnStart.enabled": true,
+        "java.signatureHelp.enabled": true
+      }
+    }
+  },
+  "forwardPorts": [
+    3000,
+    5984
+  ]
+}
