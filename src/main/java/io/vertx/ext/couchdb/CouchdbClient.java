@@ -27,7 +27,7 @@ public interface CouchdbClient {
    * @param options the configuration optiond
    * @return the client
    */
-  static CouchdbClient create(Vertx vertx, WebClientOptions options) {
+  static CouchdbClient create(Vertx vertx, CouchdbClientOptions options) {
     return CouchdbClientImpl.create(vertx, options);
   }
 
@@ -114,10 +114,4 @@ public interface CouchdbClient {
    *         {@link io.vertx.ext.couchdb.CouchdbException} if the operation fails
    */
   Future<Buffer> rawCall(JsonObject params);
-
-  /**
-   * @param credentials set access credentials
-   * @return fluent
-   */
-  CouchdbClient authetication(Credentials credentials);
 }

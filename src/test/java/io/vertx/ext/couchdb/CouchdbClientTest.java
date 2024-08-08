@@ -7,7 +7,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.couchdb.utils.UnitTest;
 import io.vertx.ext.web.client.WebClientOptions;
 
@@ -21,12 +20,16 @@ class CouchdbClientTest {
   @BeforeEach
   void beforeEach() {
     this.vertx = Vertx.vertx();
-    this.options = new WebClientOptions();
-    this.options.setDefaultHost("localhost")
-        .setDefaultPort(5984);
-    client = CouchdbClient.create(vertx, options);
-    client.authetication(new UsernamePasswordCredentials("admin", "password"));
+
+    CouchdbClientOptions options = new CouchdbClientOptions()
+      .setHost("localhost")
+      .setPort(5984)
+      .setCredentials(new CouchdbCredentials("admin", "password"))
+      .setDatabase("my_database");
+
+    this.client = CouchdbClient.create(vertx, options);
   }
+
 
   @Test
   void testCreate() {

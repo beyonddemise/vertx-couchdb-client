@@ -7,72 +7,64 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.couchdb.CouchdbClient;
+import io.vertx.ext.couchdb.CouchdbClientOptions;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
 
 public class CouchdbClientImpl implements CouchdbClient {
 
-  public static CouchdbClient create(Vertx vertx, WebClientOptions options) {
-    return new CouchdbClientImpl(vertx, options);
+  public static CouchdbClient create(Vertx vertx, CouchdbClientOptions clientOptions) {
+    return new CouchdbClientImpl(vertx, clientOptions);
   }
 
   private final Vertx vertx;
-  private final WebClientOptions options;
+  private final CouchdbClientOptions clientOptions;
   private WebClient client = null;
-  private Credentials credentials;
 
-  CouchdbClientImpl(Vertx vertx, WebClientOptions options) {
+  CouchdbClientImpl(Vertx vertx, CouchdbClientOptions clientOptions) {
     this.vertx = vertx;
-    this.options = options;
+    this.clientOptions = clientOptions;
   }
 
   @Override
   public Future<JsonObject> status() {
-
     Promise<JsonObject> promise = Promise.promise();
     initClient();
     HttpRequest<?> request = client.get("/");
 
-    if (this.credentials != null) {
-      request.authentication(this.credentials);
+    if (clientOptions.getCredentials() != null) {
+      request.authentication(clientOptions.getCredentials().toAuthCredentials());
     }
     request.send()
-        .onFailure(promise::fail)
-        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
+      .onFailure(promise::fail)
+      .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
 
     return promise.future();
   }
 
   @Override
   public Future<JsonArray> activeTasks() {
-    // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'activeTasks'");
   }
 
   @Override
   public Future<JsonArray> allDbs() {
-    // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'allDbs'");
   }
 
   @Override
   public Future<JsonArray> allDbs(JsonObject options) {
-    // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'allDbs'");
   }
 
   @Override
   public Future<JsonArray> dbsInfo(JsonObject options) {
-    // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'dbsInfo'");
   }
 
   @Override
   public Future<Buffer> rawCall(JsonObject params) {
-
     Promise<Buffer> promise = Promise.promise();
 
     String methodString = params.getString("method", "GET");
@@ -81,26 +73,19 @@ public class CouchdbClientImpl implements CouchdbClient {
     initClient();
     HttpRequest<Buffer> request = client.request(method, path);
 
-    if (this.credentials != null) {
-      request.authentication(this.credentials);
+    if (clientOptions.getCredentials() != null) {
+      request.authentication(clientOptions.getCredentials().toAuthCredentials());
     }
     request.send()
-        .onFailure(promise::fail)
-        .onSuccess(response -> promise.complete(response.body()));
+      .onFailure(promise::fail)
+      .onSuccess(response -> promise.complete(response.body()));
 
     return promise.future();
   }
 
   private void initClient() {
     if (client == null) {
-      client = WebClient.create(vertx, options);
+      client = WebClient.create(vertx, clientOptions.getWebClientOptions());
     }
   }
-
-  @Override
-  public CouchdbClient authetication(Credentials credentials) {
-    this.credentials = credentials;
-    return this;
-  }
-
 }
