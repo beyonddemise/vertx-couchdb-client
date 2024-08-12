@@ -6,9 +6,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.couchdb.impl.CouchdbClientImpl;
-import io.vertx.ext.web.client.WebClientOptions;
 
 /**
  * A Vert.x service used to interact with CouchDB server instances.
@@ -114,4 +112,25 @@ public interface CouchdbClient {
    *         {@link io.vertx.ext.couchdb.CouchdbException} if the operation fails
    */
   Future<Buffer> rawCall(JsonObject params);
+
+  /**
+   * Creates a new database in CouchDB with the specified options.
+   * This method performs a PUT request to create a database with the provided name and options.
+   *
+   * @param options JsonObject containing the parameters for creating the database:
+   *                - "name": (String) The name of the database, must follow specific naming rules.
+   *                - "q": (Integer) Optional. The number of range partitions (shards), default is 8.
+   *                - "n": (Integer) Optional. The number of replicas in the cluster, default is 3.
+   *                - "partitioned": (Boolean) Optional. Whether to create a partitioned database, default is false.
+   * @return Future with the result of the create operation, containing the response from CouchDB.
+   *         The Future fails with {@link io.vertx.ext.couchdb.CouchdbException} if the operation fails.
+   *         Possible status codes:
+   *         - 201 Created: Database created successfully.
+   *         - 202 Accepted: Accepted, at least by one node.
+   *         - 400 Bad Request: Invalid database name.
+   *         - 401 Unauthorized: Administrator privileges required.
+   *         - 412 Precondition Failed: Database already exists.
+   */
+  Future<JsonObject> createDb(JsonObject options);
+
 }
