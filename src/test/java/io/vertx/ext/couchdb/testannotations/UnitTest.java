@@ -1,7 +1,7 @@
 /**
  * UnitTest annotation
  */
-package io.vertx.ext.couchdb.utils;
+package io.vertx.ext.couchdb.testannotations;
 
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;

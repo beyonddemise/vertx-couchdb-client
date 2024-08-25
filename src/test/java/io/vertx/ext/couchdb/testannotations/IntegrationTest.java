@@ -1,7 +1,7 @@
 /**
  * IntegrationTest annotation
  */
-package io.vertx.ext.couchdb.utils;
+package io.vertx.ext.couchdb.testannotations;
 
 
 import io.vertx.junit5.VertxExtension;
