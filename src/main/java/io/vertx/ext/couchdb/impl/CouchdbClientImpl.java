@@ -8,6 +8,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.couchdb.CouchDbDatabase;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.couchdb.exception.CouchdbDatabaseCreationException;
@@ -102,6 +103,11 @@ public class CouchdbClientImpl implements CouchdbClient {
   public Future<JsonObject> createDb(String databaseName, JsonObject options) {
     options.put("db_name", databaseName);
     return doCreateDb(options);
+  }
+
+  @Override
+  public Future<CouchDbDatabase> getDatabase(String databaseName) {
+    return null;
   }
 
   private Future<JsonObject> doCreateDb(JsonObject options) {

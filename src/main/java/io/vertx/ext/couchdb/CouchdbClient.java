@@ -101,4 +101,12 @@ public interface CouchdbClient {
    * @return Future with the result of the create operation, containing the response from CouchDB.
    */
   Future<JsonObject> createDb(String databaseName, JsonObject options);
+
+  /**
+   * Retrieves a specified database.
+   *
+   * @param databaseName The name of the database, must follow specific naming rules.
+   * @return Future with a CouchDbDatabase instance
+   */
+  Future<CouchDbDatabase> getDatabase(String databaseName);
 }
