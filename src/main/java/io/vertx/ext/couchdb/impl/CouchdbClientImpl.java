@@ -87,13 +87,19 @@ public class CouchdbClientImpl implements CouchdbClient {
       request.authentication(credentials);
     }
 
-    request.send()
-      .onFailure(promise::fail)
-      .onSuccess(response -> promise.complete(response.body()));
+    if (params.containsKey("body")) {
+      JsonObject body = params.getJsonObject("body");
+      request.sendJson(body)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.body()));
+    } else {
+      request.send()
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.body()));
+    }
 
     return promise.future();
   }
-
   @Override
   public Future<JsonObject> createDb(String databaseName) {
     return createDb(databaseName, new JsonObject());
@@ -106,8 +112,8 @@ public class CouchdbClientImpl implements CouchdbClient {
   }
 
   @Override
-  public Future<CouchDbDatabase> getDatabase(String databaseName) {
-    return null;
+  public Future<CouchDbDatabase> getDatabase(final String databaseName) {
+    return Future.succeededFuture(CouchDbDatabase.create(this, databaseName));
   }
 
   private Future<JsonObject> doCreateDb(JsonObject options) {

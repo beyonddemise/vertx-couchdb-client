@@ -7,24 +7,51 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.couchdb.CouchDbDatabase;
 import io.vertx.ext.couchdb.CouchDbStream;
+import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.web.client.WebClient;
 
-public class CouchDbDatabaseImpl extends CouchdbClientImpl implements CouchDbDatabase {
+public class CouchDbDatabaseImpl implements CouchDbDatabase {
 
-  CouchDbDatabaseImpl(Vertx vertx, WebClient client, Credentials credentials) {
-    super(vertx, client, credentials);
+  private final CouchdbClient client;
+
+  private final String databaseName;
+
+  CouchDbDatabaseImpl(CouchdbClient client, String databaseName) {
+    this.client = client;
+    this.databaseName = databaseName;
   }
 
+  public static CouchDbDatabase create(CouchdbClient client, String databaseName) {
+    return new CouchDbDatabaseImpl(client, databaseName);
+  }
 
   @Override
-  public Future<JsonObject> createOrUpdateDesignDocument(String dbName, String designDocName, JsonObject designDocument) {
+  public Future<JsonObject> createOrUpdateDocument(String docId, JsonObject document) {
     JsonObject params = new JsonObject()
       .put("method", "PUT")
-      .put("path", "/" + dbName + "/_design/" + designDocName)
-      .put("body", designDocument);
+      .put("path", "/" + databaseName + "/" + docId)
+      .put("body", document);
 
-    return rawCall(params).map(Buffer::toJsonObject);
+    System.out.println("Params: " + params);
+
+    if (document.containsKey("_rev")) {
+      params.put("query", new JsonObject().put("rev", document.getString("_rev")));
+    }
+
+    return client.rawCall(params).map(Buffer::toJsonObject);
   }
+
+  @Override
+  public Future<JsonObject> getDocument(String docId, JsonObject options) {
+    JsonObject params = new JsonObject()
+      .put("method", "GET")
+      .put("path", "/" + databaseName + "/" + docId)
+      .put("query", options);
+
+    return client.rawCall(params).map(Buffer::toJsonObject);
+  }
+
+
 
   @Override
   public Future<JsonObject> status() {
