@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2024 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
 package io.vertx.ext.couchdb;
 
 import io.vertx.core.Future;
@@ -44,7 +54,8 @@ class CouchdbClientTest {
 
   @BeforeEach
   void setUp(Vertx vertx) {
-    client = CouchdbClient.create(vertx, mockWebClient, new UsernamePasswordCredentials("admin", "password"));
+    client = CouchdbClient.create(vertx, mockWebClient,
+        new UsernamePasswordCredentials("admin", "password"));
   }
 
   @Test
@@ -101,13 +112,17 @@ class CouchdbClientTest {
     when(mockHttpRequest.authentication(any())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
     when(mockHttpResponse.statusCode()).thenReturn(PRECONDITION_FAILED.code());
-    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(new JsonObject().put("error", "file_exists").put("reason", "The database could not be created, the file already exists."));
+    when(mockHttpResponse.bodyAsJsonObject())
+        .thenReturn(new JsonObject().put("error", "file_exists").put("reason",
+            "The database could not be created, the file already exists."));
 
     Future<JsonObject> result = client.createDb("existing_db");
 
     result.onComplete(ar -> {
       if (ar.failed()) {
-        assertEquals("Error creating database: file_exists - The database could not be created, the file already exists.", ar.cause().getMessage());
+        assertEquals(
+            "Error creating database: file_exists - The database could not be created, the file already exists.",
+            ar.cause().getMessage());
         testContext.completeNow();
       } else {
         testContext.failNow(new AssertionError("Expected to fail, but succeeded"));
@@ -124,13 +139,17 @@ class CouchdbClientTest {
     when(mockHttpRequest.authentication(any())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
     when(mockHttpResponse.statusCode()).thenReturn(BAD_REQUEST.code());
-    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(new JsonObject().put("error", "illegal_database_name").put("reason", "Name: '_invalid_db'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter."));
+    when(mockHttpResponse.bodyAsJsonObject())
+        .thenReturn(new JsonObject().put("error", "illegal_database_name").put("reason",
+            "Name: '_invalid_db'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter."));
 
     Future<JsonObject> result = client.createDb("_invalid_db");
 
     result.onComplete(ar -> {
       if (ar.failed()) {
-        assertEquals("Error creating database: illegal_database_name - Name: '_invalid_db'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter.", ar.cause().getMessage());
+        assertEquals(
+            "Error creating database: illegal_database_name - Name: '_invalid_db'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter.",
+            ar.cause().getMessage());
         testContext.completeNow();
       } else {
         testContext.failNow(new AssertionError("Expected to fail, but succeeded"));
@@ -141,17 +160,21 @@ class CouchdbClientTest {
   }
 
   @Test
-  void testCreateDbUnauthorized(Vertx vertx, VertxTestContext testContext) throws InterruptedException {
+  void testCreateDbUnauthorized(Vertx vertx, VertxTestContext testContext)
+      throws InterruptedException {
     when(mockWebClient.put(anyString())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.addQueryParam(anyString(), anyString())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.authentication(any())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.send()).thenReturn(Future.failedFuture(new Exception("Error creating database: unauthorized - Name or password is incorrect.")));
+    when(mockHttpRequest.send()).thenReturn(Future.failedFuture(
+        new Exception("Error creating database: unauthorized - Name or password is incorrect.")));
 
-    CouchdbClient unauthorizedClient = CouchdbClient.create(vertx, mockWebClient, new UsernamePasswordCredentials("invalid_user", "invalid_password"));
+    CouchdbClient unauthorizedClient = CouchdbClient.create(vertx, mockWebClient,
+        new UsernamePasswordCredentials("invalid_user", "invalid_password"));
 
     unauthorizedClient.createDb("unauthorized_db").onComplete(ar -> {
       if (ar.failed()) {
-        assertEquals("Error creating database: unauthorized - Name or password is incorrect.", ar.cause().getMessage());
+        assertEquals("Error creating database: unauthorized - Name or password is incorrect.",
+            ar.cause().getMessage());
         testContext.completeNow();
       } else {
         fail("Expected failure for unauthorized user but succeeded.");

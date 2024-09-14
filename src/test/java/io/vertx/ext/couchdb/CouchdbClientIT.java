@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2024 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
 package io.vertx.ext.couchdb;
 
 import io.vertx.core.Future;
@@ -30,21 +40,23 @@ public class CouchdbClientIT {
   private static final int COUCHDB_PORT = 5984;
 
   @Container
-  private static final GenericContainer<?> couchdbContainer = new GenericContainer<>(DockerImageName.parse("couchdb:3.3.3"))
-    .withExposedPorts(COUCHDB_PORT)
-    .withEnv("COUCHDB_USER", "admin")
-    .withEnv("COUCHDB_PASSWORD", "password")
-    .waitingFor(Wait.forListeningPort());
+  private static final GenericContainer<?> couchdbContainer =
+      new GenericContainer<>(DockerImageName.parse("couchdb:3.3.3"))
+          .withExposedPorts(COUCHDB_PORT)
+          .withEnv("COUCHDB_USER", "admin")
+          .withEnv("COUCHDB_PASSWORD", "password")
+          .waitingFor(Wait.forListeningPort());
 
   private static CouchdbClient client;
 
   @BeforeAll
   static void setup(Vertx vertx) {
     WebClient webClient = WebClient.create(vertx, new WebClientOptions()
-      .setDefaultHost(couchdbContainer.getHost())
-      .setDefaultPort(couchdbContainer.getMappedPort(COUCHDB_PORT)));
+        .setDefaultHost(couchdbContainer.getHost())
+        .setDefaultPort(couchdbContainer.getMappedPort(COUCHDB_PORT)));
 
-    client = CouchdbClient.create(vertx, webClient, new UsernamePasswordCredentials("admin", "password"));
+    client = CouchdbClient.create(vertx, webClient,
+        new UsernamePasswordCredentials("admin", "password"));
 
   }
 
@@ -80,13 +92,15 @@ public class CouchdbClientIT {
   }
 
   @Test
-  void testCreateDbAlreadyExists(Vertx vertx, VertxTestContext testContext) throws InterruptedException {
+  void testCreateDbAlreadyExists(Vertx vertx, VertxTestContext testContext)
+      throws InterruptedException {
     client.createDb("existing_db").onComplete(ar1 -> {
       if (ar1.succeeded()) {
         client.createDb("existing_db").onComplete(ar2 -> {
           if (ar2.failed()) {
-            assertEquals("Error creating database: file_exists - The database could not be created, the file already exists.",
-              ar2.cause().getMessage());
+            assertEquals(
+                "Error creating database: file_exists - The database could not be created, the file already exists.",
+                ar2.cause().getMessage());
             testContext.completeNow();
           } else {
             fail("Expected failure for already existing database but succeeded.");
@@ -101,10 +115,13 @@ public class CouchdbClientIT {
   }
 
   @Test
-  void testCreateDbInvalidName(Vertx vertx, VertxTestContext testContext) throws InterruptedException {
+  void testCreateDbInvalidName(Vertx vertx, VertxTestContext testContext)
+      throws InterruptedException {
     client.createDb("_invalid_db").onComplete(ar -> {
       if (ar.failed()) {
-        assertEquals("Error creating database: illegal_database_name - Name: '_invalid_db'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter.", ar.cause().getMessage());
+        assertEquals(
+            "Error creating database: illegal_database_name - Name: '_invalid_db'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter.",
+            ar.cause().getMessage());
         testContext.completeNow();
       } else {
         fail("Expected failure for invalid database name but succeeded.");
@@ -115,17 +132,19 @@ public class CouchdbClientIT {
   }
 
   @Test
-  void testCreateDbUnauthorized(Vertx vertx, VertxTestContext testContext) throws InterruptedException {
+  void testCreateDbUnauthorized(Vertx vertx, VertxTestContext testContext)
+      throws InterruptedException {
     WebClient webClient = WebClient.create(vertx, new WebClientOptions()
-      .setDefaultHost(couchdbContainer.getHost())
-      .setDefaultPort(couchdbContainer.getMappedPort(COUCHDB_PORT)));
+        .setDefaultHost(couchdbContainer.getHost())
+        .setDefaultPort(couchdbContainer.getMappedPort(COUCHDB_PORT)));
 
     CouchdbClient unauthorizedClient = CouchdbClient.create(vertx, webClient,
-      new UsernamePasswordCredentials("invalid_user", "invalid_password"));
+        new UsernamePasswordCredentials("invalid_user", "invalid_password"));
 
     unauthorizedClient.createDb("unauthorized_db").onComplete(ar -> {
       if (ar.failed()) {
-        assertEquals("Error creating database: unauthorized - Name or password is incorrect.", ar.cause().getMessage());
+        assertEquals("Error creating database: unauthorized - Name or password is incorrect.",
+            ar.cause().getMessage());
         testContext.completeNow();
       } else {
         fail("Expected failure for unauthorized user but succeeded.");

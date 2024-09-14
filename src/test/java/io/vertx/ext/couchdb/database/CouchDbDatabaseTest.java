@@ -1,3 +1,14 @@
+
+/*
+ * Copyright (c) 2024 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
 package io.vertx.ext.couchdb.database;
 
 import io.vertx.core.Future;
@@ -45,20 +56,23 @@ class CouchDbDatabaseTest {
   @BeforeEach
   void setUp(Vertx vertx) {
     MockitoAnnotations.initMocks(this);
-    client = CouchdbClient.create(vertx, mockWebClient, new UsernamePasswordCredentials("admin", "password"));
+    client = CouchdbClient.create(vertx, mockWebClient,
+        new UsernamePasswordCredentials("admin", "password"));
     database = CouchDbDatabase.create(client, "test_db");
   }
 
   @Test
   void testCreateOrUpdateDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
     when(mockWebClient.request(any(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.sendJson(any(JsonObject.class))).thenReturn(Future.succeededFuture(mockHttpResponse));
+    when(mockHttpRequest.sendJson(any(JsonObject.class)))
+        .thenReturn(Future.succeededFuture(mockHttpResponse));
     when(mockHttpResponse.statusCode()).thenReturn(CREATED.code());
-    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(new JsonObject().put("ok", true).put("id", "recipe_123"));
+    when(mockHttpResponse.bodyAsJsonObject())
+        .thenReturn(new JsonObject().put("ok", true).put("id", "recipe_123"));
 
     JsonObject document = new JsonObject()
-      .put("name", "Spaghetti with meatballs")
-      .put("ingredients", new JsonObject().put("pasta", "spaghetti"));
+        .put("name", "Spaghetti with meatballs")
+        .put("ingredients", new JsonObject().put("pasta", "spaghetti"));
 
     database.createOrUpdateDocument("recipe_123", document).onComplete(ar -> {
       if (ar.succeeded()) {
@@ -77,11 +91,12 @@ class CouchDbDatabaseTest {
   @Test
   void testCreateOrUpdateDocumentError(VertxTestContext testContext) throws InterruptedException {
     when(mockWebClient.request(any(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.sendJson(any(JsonObject.class))).thenReturn(Future.failedFuture(new Exception("Failed to create document")));
+    when(mockHttpRequest.sendJson(any(JsonObject.class)))
+        .thenReturn(Future.failedFuture(new Exception("Failed to create document")));
 
     JsonObject document = new JsonObject()
-      .put("name", "Spaghetti with meatballs")
-      .put("ingredients", new JsonObject().put("pasta", "spaghetti"));
+        .put("name", "Spaghetti with meatballs")
+        .put("ingredients", new JsonObject().put("pasta", "spaghetti"));
 
     database.createOrUpdateDocument("recipe_123", document).onComplete(ar -> {
       if (ar.failed()) {
@@ -101,9 +116,9 @@ class CouchDbDatabaseTest {
     when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
     when(mockHttpResponse.statusCode()).thenReturn(OK.code());
     when(mockHttpResponse.bodyAsJsonObject()).thenReturn(new JsonObject()
-      .put("_id", "recipe_123")
-      .put("name", "Spaghetti with meatballs")
-      .put("ingredients", new JsonObject().put("pasta", "spaghetti")));
+        .put("_id", "recipe_123")
+        .put("name", "Spaghetti with meatballs")
+        .put("ingredients", new JsonObject().put("pasta", "spaghetti")));
 
     JsonObject options = new JsonObject().put("attachments", false);
 
@@ -124,7 +139,8 @@ class CouchDbDatabaseTest {
   @Test
   void testGetDocumentNotFound(VertxTestContext testContext) throws InterruptedException {
     when(mockWebClient.request(any(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.send()).thenReturn(Future.failedFuture(new Exception("Document not found")));
+    when(mockHttpRequest.send())
+        .thenReturn(Future.failedFuture(new Exception("Document not found")));
 
     JsonObject options = new JsonObject().put("attachments", false);
 

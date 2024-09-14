@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2024 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
 package io.vertx.ext.couchdb.impl;
 
 import io.vertx.core.Future;
@@ -35,7 +45,8 @@ public class CouchdbClientImpl implements CouchdbClient {
     return create(vertx, client, null);
   }
 
-  public static CouchdbClient create(final Vertx vertx, final WebClient client, final Credentials credentials) {
+  public static CouchdbClient create(final Vertx vertx, final WebClient client,
+      final Credentials credentials) {
     return new CouchdbClientImpl(vertx, client, credentials);
   }
 
@@ -48,8 +59,8 @@ public class CouchdbClientImpl implements CouchdbClient {
       request.authentication(credentials);
     }
     request.send()
-      .onFailure(promise::fail)
-      .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
 
     return promise.future();
   }
@@ -90,16 +101,17 @@ public class CouchdbClientImpl implements CouchdbClient {
     if (params.containsKey("body")) {
       JsonObject body = params.getJsonObject("body");
       request.sendJson(body)
-        .onFailure(promise::fail)
-        .onSuccess(response -> promise.complete(response.body()));
+          .onFailure(promise::fail)
+          .onSuccess(response -> promise.complete(response.body()));
     } else {
       request.send()
-        .onFailure(promise::fail)
-        .onSuccess(response -> promise.complete(response.body()));
+          .onFailure(promise::fail)
+          .onSuccess(response -> promise.complete(response.body()));
     }
 
     return promise.future();
   }
+
   @Override
   public Future<JsonObject> createDb(String databaseName) {
     return createDb(databaseName, new JsonObject());
@@ -124,27 +136,27 @@ public class CouchdbClientImpl implements CouchdbClient {
     var partitioned = options.getBoolean("partitioned", false);
 
     HttpRequest<Buffer> request = client.put("/" + databaseName)
-      .addQueryParam("q", shards.toString())
-      .addQueryParam("n", replicas.toString())
-      .addQueryParam("partitioned", partitioned.toString());
+        .addQueryParam("q", shards.toString())
+        .addQueryParam("n", replicas.toString())
+        .addQueryParam("partitioned", partitioned.toString());
 
     if (credentials != null) {
       request.authentication(credentials);
     }
 
     request.send()
-      .onSuccess(response -> {
-        int statusCode = response.statusCode();
-        JsonObject result = response.bodyAsJsonObject();
-        if (statusCode == 201 || statusCode == 202) {
-          promise.complete(result);
-        } else {
-          String error = result.getString("error");
-          String reason = result.getString("reason");
-          promise.fail(new CouchdbDatabaseCreationException(error, reason, statusCode, result));
-        }
-      })
-      .onFailure(promise::fail);
+        .onSuccess(response -> {
+          int statusCode = response.statusCode();
+          JsonObject result = response.bodyAsJsonObject();
+          if (statusCode == 201 || statusCode == 202) {
+            promise.complete(result);
+          } else {
+            String error = result.getString("error");
+            String reason = result.getString("reason");
+            promise.fail(new CouchdbDatabaseCreationException(error, reason, statusCode, result));
+          }
+        })
+        .onFailure(promise::fail);
 
     return promise.future();
   }

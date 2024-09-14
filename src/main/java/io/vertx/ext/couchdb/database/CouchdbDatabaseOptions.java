@@ -8,10 +8,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.ext.couchdb.exception;
+package io.vertx.ext.couchdb.database;
 
-public class CouchdbException extends Exception {
-  public CouchdbException(String message) {
-    super(message);
-  }
+public class CouchdbDatabaseOptions {
+
 }
