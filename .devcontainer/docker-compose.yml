@@ -1,7 +1,6 @@
-version: "3.8"
 services:
   app:
-    container_name: vertx-couchdb
+    container_name: vertx-couchdb-client
     build:
       context: .
       dockerfile: Dockerfile
@@ -14,11 +13,12 @@ services:
     depends_on:
       - couchdb
   couchdb:
+    container_name: vertx-couchdb-db
     image: couchdb:latest
-    container_name: couchdb
     environment:
       COUCHDB_USER: admin
       COUCHDB_PASSWORD: password
+
 # Uncomment the following lines to persist data
 #     volumes:
 #       - type: volume

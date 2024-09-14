@@ -1,8 +1,10 @@
 = Vert.x CouchDB Client
 
-A Vert.x client allowing applications to interact with a CouchDB instance, whether that's
-saving, retrieving, searching, or deleting documents. Mongo is a great match for persisting data in a Vert.x application
-as it natively handles JSON (BSON) documents.
+:toc: left
+:lang: $lang
+:$lang: $lang
+
+The Vert.x CouchDB Client is a convenience wrapper around the https://vertx.io/docs/vertx-web-client/java/[Vert.x Web Client] allowing applications to interact with an https://couchdb.apache.org/[Apache CouchDB] (or compatible) instance, for CRUD operations, administrative tasks and database design. CouchDB is a great match for persisting data in a Vert.x application as it natively handles JSON documents.
 
 *Features*
 
@@ -37,3 +39,22 @@ compile 'io.vertx:vertx-couchdb-client:${vertx.version}'
 
 
 == Creating a client
+
+[source,$lang]
+----
+{@link examples.CouchDbClientExample}
+----
+
+== Authentication
+
+Authentication is provided by the Vert.x web client, so you will use `Credentials` fit for purpose
+
+== CRUD operations
+
+== Design Tasks
+
+== Replication
+
+== CouchDB configuration
+
+== Change listener

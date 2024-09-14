@@ -6,7 +6,7 @@ An asynchronous client for interacting whith https://couchdb.apache.org[Apache C
 
 Please see the main documentation on the web-site for a full description:
 
-- https://github.com/beyonddemise/vertx-couchdb-client/src/main/asciidoc/index.adoc[Java documentation]
+- https://github.com/beyonddemise/vertx-couchdb-client/blob/main/src/main/asciidoc/index.adoc[Java documentation]
 
 Very much work in progress!
 
