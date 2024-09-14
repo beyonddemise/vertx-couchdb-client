@@ -7,6 +7,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.Credentials;
+import io.vertx.ext.couchdb.database.CouchDbDatabase;
 import io.vertx.ext.couchdb.exception.CouchdbException;
 import io.vertx.ext.couchdb.impl.CouchdbClientImpl;
 import io.vertx.ext.web.client.WebClient;
@@ -101,4 +102,12 @@ public interface CouchdbClient {
    * @return Future with the result of the create operation, containing the response from CouchDB.
    */
   Future<JsonObject> createDb(String databaseName, JsonObject options);
+
+  /**
+   * Retrieves a specified database.
+   *
+   * @param databaseName The name of the database, must follow specific naming rules.
+   * @return Future with a CouchDbDatabase instance
+   */
+  Future<CouchDbDatabase> getDatabase(String databaseName);
 }

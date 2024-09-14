@@ -8,6 +8,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.couchdb.database.CouchDbDatabase;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.couchdb.exception.CouchdbDatabaseCreationException;
@@ -86,13 +87,19 @@ public class CouchdbClientImpl implements CouchdbClient {
       request.authentication(credentials);
     }
 
-    request.send()
-      .onFailure(promise::fail)
-      .onSuccess(response -> promise.complete(response.body()));
+    if (params.containsKey("body")) {
+      JsonObject body = params.getJsonObject("body");
+      request.sendJson(body)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.body()));
+    } else {
+      request.send()
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.body()));
+    }
 
     return promise.future();
   }
-
   @Override
   public Future<JsonObject> createDb(String databaseName) {
     return createDb(databaseName, new JsonObject());
@@ -102,6 +109,11 @@ public class CouchdbClientImpl implements CouchdbClient {
   public Future<JsonObject> createDb(String databaseName, JsonObject options) {
     options.put("db_name", databaseName);
     return doCreateDb(options);
+  }
+
+  @Override
+  public Future<CouchDbDatabase> getDatabase(final String databaseName) {
+    return Future.succeededFuture(CouchDbDatabase.create(this, databaseName));
   }
 
   private Future<JsonObject> doCreateDb(JsonObject options) {
