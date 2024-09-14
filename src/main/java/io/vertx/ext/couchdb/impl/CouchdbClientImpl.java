@@ -15,13 +15,17 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
 import io.vertx.ext.couchdb.CouchdbClient;
+import io.vertx.ext.couchdb.NullCredentials;
 import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.couchdb.exception.CouchdbDatabaseCreationException;
+import io.vertx.ext.couchdb.parameters.CouchdbQueryParams;
+import io.vertx.ext.couchdb.parameters.QueryParameter;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 
@@ -36,13 +40,14 @@ public class CouchdbClientImpl implements CouchdbClient {
   CouchdbClientImpl(Vertx vertx, WebClient client, Credentials credentials) {
     Objects.requireNonNull(vertx);
     Objects.requireNonNull(client);
+    Objects.requireNonNull(credentials);
     this.vertx = (VertxInternal) vertx;
     this.client = client;
     this.credentials = credentials;
   }
 
   public static CouchdbClient create(final Vertx vertx, final WebClient client) {
-    return create(vertx, client, null);
+    return create(vertx, client, new NullCredentials());
   }
 
   public static CouchdbClient create(final Vertx vertx, final WebClient client,
@@ -52,37 +57,31 @@ public class CouchdbClientImpl implements CouchdbClient {
 
   @Override
   public Future<JsonObject> status() {
-    Promise<JsonObject> promise = vertx.promise();
-    HttpRequest<Buffer> request = client.get("/");
-
-    if (credentials != null) {
-      request.authentication(credentials);
-    }
-    request.send()
-        .onFailure(promise::fail)
-        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
-
-    return promise.future();
+    return this.getObject("/", null);
   }
 
   @Override
-  public Future<JsonArray> activeTasks() {
-    throw new UnsupportedOperationException("Unimplemented method 'activeTasks'");
+  // TODO: adjust query param object
+  public Future<JsonArray> activeTasks(CouchdbQueryParams options) {
+    String baseUrl = "/_active_tasks";
+    return this.getArray(baseUrl, options);
   }
 
   @Override
   public Future<JsonArray> allDbs() {
-    throw new UnsupportedOperationException("Unimplemented method 'allDbs'");
+    return allDbs(new CouchdbQueryParams());
   }
 
   @Override
-  public Future<JsonArray> allDbs(JsonObject options) {
-    throw new UnsupportedOperationException("Unimplemented method 'allDbs'");
+  public Future<JsonArray> allDbs(CouchdbQueryParams options) {
+    String baseUrl = "/_all_dbs";
+    return this.getArray(baseUrl, options);
   }
 
   @Override
-  public Future<JsonArray> dbsInfo(JsonObject options) {
-    throw new UnsupportedOperationException("Unimplemented method 'dbsInfo'");
+  public Future<JsonArray> dbsInfo(CouchdbQueryParams options) {
+    String baseUrl = "/_dbs_info";
+    return this.getArray(baseUrl, options);
   }
 
   @Override
@@ -113,12 +112,12 @@ public class CouchdbClientImpl implements CouchdbClient {
   }
 
   @Override
-  public Future<JsonObject> createDb(String databaseName) {
+  public Future<CouchDbDatabase> createDb(String databaseName) {
     return createDb(databaseName, new JsonObject());
   }
 
   @Override
-  public Future<JsonObject> createDb(String databaseName, JsonObject options) {
+  public Future<CouchDbDatabase> createDb(String databaseName, JsonObject options) {
     options.put("db_name", databaseName);
     return doCreateDb(options);
   }
@@ -159,5 +158,39 @@ public class CouchdbClientImpl implements CouchdbClient {
         .onFailure(promise::fail);
 
     return promise.future();
+  }
+
+  private Future<JsonArray> getArray(String baseUrl, QueryParameter params) {
+
+    String finalUrl = params == null ? baseUrl : params.appendParams(baseUrl);
+
+    Promise<JsonArray> promise = vertx.promise();
+    client.get(finalUrl)
+        .authentication(credentials)
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonArray()));
+
+    return promise.future();
+
+  }
+
+  private Future<JsonObject> getObject(String baseUrl, QueryParameter params) {
+
+    String finalUrl = params == null ? baseUrl : params.appendParams(baseUrl);
+
+    Promise<JsonObject> promise = vertx.promise();
+    client.get(finalUrl)
+        .authentication(credentials)
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
+
+    return promise.future();
+
   }
 }

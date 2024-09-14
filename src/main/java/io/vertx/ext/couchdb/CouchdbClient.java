@@ -20,6 +20,7 @@ import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
 import io.vertx.ext.couchdb.exception.CouchdbException;
 import io.vertx.ext.couchdb.impl.CouchdbClientImpl;
+import io.vertx.ext.couchdb.parameters.CouchdbQueryParams;
 import io.vertx.ext.web.client.WebClient;
 
 /**
@@ -56,18 +57,24 @@ public interface CouchdbClient {
   }
 
   /**
-   * CouchDB server status as JSON object.
+   * CouchDB instance status as JSON object.
    *
+   * @see https://docs.couchdb.org/en/stable/api/server/common.html#/
    * @return Future with the status of the CouchDB server, fails with
    *         {@link CouchdbException} if the operation fails.
    */
   Future<JsonObject> status();
 
-  Future<JsonArray> activeTasks();
+  /**
+   * @see https://docs.couchdb.org/en/stable/api/server/common.html#active-tasks
+   * @return Future with task informaton
+   */
+  Future<JsonArray> activeTasks(CouchdbQueryParams options);
 
   /**
    * List all databases.
    *
+   * @See https://docs.couchdb.org/en/stable/api/server/common.html#all-dbs
    * @return Future with the list of databases, fails with {@link CouchdbException} if the operation
    *         fails.
    */
@@ -80,16 +87,17 @@ public interface CouchdbClient {
    * @return Future with the list of databases, fails with {@link CouchdbException} if the operation
    *         fails.
    */
-  Future<JsonArray> allDbs(JsonObject options);
+  Future<JsonArray> allDbs(CouchdbQueryParams options);
 
   /**
-   * List all databases, limited by the query parameters.
+   * List all database Info, limited by the query parameters.
    *
+   * @see https://docs.couchdb.org/en/stable/api/server/common.html#dbs-info
    * @param options JsonObject with the query parameters.
    * @return Future with the list of databases, fails with {@link CouchdbException} if the operation
    *         fails.
    */
-  Future<JsonArray> dbsInfo(JsonObject options);
+  Future<JsonArray> dbsInfo(CouchdbQueryParams options);
 
   /**
    * Makes a call to the CouchDB server with the given parameters.
@@ -101,12 +109,26 @@ public interface CouchdbClient {
   Future<Buffer> rawCall(JsonObject params);
 
   /**
-   * Creates a new database in CouchDB with the specified name.
+   * Makes a call to the CouchDB server with the given parameters.
+   * Expects a Json Object back
    *
-   * @param databaseName The name of the database, must follow specific naming rules.
-   * @return Future with the result of the create operation, containing the response from CouchDB.
+   * @param params JsonObject with the headers, path, method, parameters, and payload (if any).
+   * @return Future with the result of the call, fails with {@link CouchdbException} if the
+   *         operation fails.
    */
-  Future<JsonObject> createDb(String databaseName);
+  Future<Buffer> jsonObjectCall(JsonObject params);
+
+
+  /**
+   * Makes a call to the CouchDB server with the given parameters.
+   * expects a JsonArray back
+   *
+   * @param params JsonObject with the headers, path, method, parameters, and payload (if any).
+   * @return Future with the result of the call, fails with {@link CouchdbException} if the
+   *         operation fails.
+   */
+  Future<Buffer> jsonArrayCall(JsonObject params);
+
 
   /**
    * Creates a new database in CouchDB with the specified name and options.
@@ -115,7 +137,7 @@ public interface CouchdbClient {
    * @param options JsonObject containing optional parameters for creating the database.
    * @return Future with the result of the create operation, containing the response from CouchDB.
    */
-  Future<JsonObject> createDb(String databaseName, JsonObject options);
+  Future<CouchDbDatabase> createDb(String databaseName, JsonObject options);
 
   /**
    * Retrieves a specified database.
