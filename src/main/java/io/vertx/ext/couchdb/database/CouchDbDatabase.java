@@ -1,9 +1,11 @@
-package io.vertx.ext.couchdb;
+package io.vertx.ext.couchdb.database;
 
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.couchdb.impl.CouchDbDatabaseImpl;
+import io.vertx.ext.couchdb.CouchDbStream;
+import io.vertx.ext.couchdb.CouchdbClient;
+import io.vertx.ext.couchdb.database.impl.CouchDbDatabaseImpl;
 
 @VertxGen
 public interface CouchDbDatabase {

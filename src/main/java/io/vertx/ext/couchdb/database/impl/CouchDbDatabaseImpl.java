@@ -1,14 +1,11 @@
-package io.vertx.ext.couchdb.impl;
+package io.vertx.ext.couchdb.database.impl;
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.ext.auth.authentication.Credentials;
-import io.vertx.ext.couchdb.CouchDbDatabase;
 import io.vertx.ext.couchdb.CouchDbStream;
 import io.vertx.ext.couchdb.CouchdbClient;
-import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.couchdb.database.CouchDbDatabase;
 
 public class CouchDbDatabaseImpl implements CouchDbDatabase {
 
@@ -31,8 +28,6 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
       .put("method", "PUT")
       .put("path", "/" + databaseName + "/" + docId)
       .put("body", document);
-
-    System.out.println("Params: " + params);
 
     if (document.containsKey("_rev")) {
       params.put("query", new JsonObject().put("rev", document.getString("_rev")));

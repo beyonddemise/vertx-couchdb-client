@@ -7,6 +7,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.Credentials;
+import io.vertx.ext.couchdb.database.CouchDbDatabase;
 import io.vertx.ext.couchdb.exception.CouchdbException;
 import io.vertx.ext.couchdb.impl.CouchdbClientImpl;
 import io.vertx.ext.web.client.WebClient;
