@@ -8,6 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
+
 package io.vertx.ext.couchdb;
 
 import io.vertx.codegen.annotations.VertxGen;
@@ -30,7 +31,8 @@ import io.vertx.ext.web.client.WebClient;
 /**
  * A Vert.x service used to interact with CouchDB server instances.
  * <p>
- * Some of the operations might change <i>_id</i> field of passed {@link JsonObject} document.
+ * Some of the operations might change <i>_id</i> field of passed
+ * {@link JsonObject} document.
  *
  * @author <a href="https://wissel.net">Stephan Wissel</a>
  */
@@ -40,7 +42,7 @@ public interface CouchdbClient {
   /**
    * Create a CouchDB client with a WebClient instance.
    *
-   * @param vertx the Vert.x instance
+   * @param vertx  the Vert.x instance
    * @param client the WebClient instance
    * @return the client
    */
@@ -51,8 +53,8 @@ public interface CouchdbClient {
   /**
    * Create a CouchDB client with a WebClient instance and credentials.
    *
-   * @param vertx the Vert.x instance
-   * @param client the WebClient instance
+   * @param vertx       the Vert.x instance
+   * @param client      the WebClient instance
    * @param credentials the credentials for authentication
    * @return the client
    */
@@ -87,12 +89,13 @@ public interface CouchdbClient {
    */
   Future<JsonObject> uuids(int count);
 
-
   /**
    * Makes a call to the CouchDB server with the given parameters.
    *
-   * @param params JsonObject with the headers, path, method, parameters, and payload (if any).
-   * @return Future with the result of the call, fails with {@link CouchdbException} if the
+   * @param params JsonObject with the headers, path, method, parameters, and
+   *               payload (if any).
+   * @return Future with the result of the call, fails with
+   *         {@link CouchdbException} if the
    *         operation fails.
    */
   Future<Buffer> rawCall(JsonObject params);
@@ -100,11 +103,11 @@ public interface CouchdbClient {
   /**
    * Retrieves a specified database.
    *
-   * @param databaseName The name of the database, must follow specific naming rules.
+   * @param databaseName The name of the database, must follow specific naming
+   *                     rules.
    * @return Future with a CouchDbDatabase instance
    */
   Future<CouchDbDatabase> getDatabase(String databaseName);
-
 
   /**
    * @return the vertx instance
@@ -126,6 +129,14 @@ public interface CouchdbClient {
    */
   Future<CouchdbAdmin> getAdmin();
 
+  /**
+   * Performs a GET request and returns the result as a JsonArray.
+   *
+   * @param client  The WebClient to use for the request.
+   * @param baseUrl The base URL for the request.
+   * @param params  The query parameters to append to the URL, or null if none.
+   * @return A Future with the JsonArray result of the GET request.
+   */
   default Future<JsonArray> getJsonArray(WebClient client, String baseUrl, QueryParameters params) {
 
     String finalUrl = params == null ? baseUrl : params.appendParamsToUrl(baseUrl);
@@ -143,6 +154,14 @@ public interface CouchdbClient {
 
   }
 
+  /**
+   * Performs a GET request and returns the result as a JsonObject.
+   *
+   * @param client  The WebClient to use for the request.
+   * @param baseUrl The base URL for the request.
+   * @param params  The query parameters to append to the URL, or null if none.
+   * @return A Future with the JsonObject result of the GET request.
+   */
   default Future<JsonObject> getJsonObject(WebClient client, String baseUrl,
       QueryParameters params) {
 
@@ -161,6 +180,15 @@ public interface CouchdbClient {
 
   }
 
+  /**
+   * Performs a PUT request and returns the result as a JsonObject.
+   *
+   * @param client  The WebClient to use for the request.
+   * @param baseUrl The base URL for the request.
+   * @param params  The query parameters to append to the URL, or null if none.
+   * @param body    The JSON body to send in the PUT request.
+   * @return A Future with the JsonObject result of the PUT request.
+   */
   default Future<JsonObject> putJsonObject(WebClient client, String baseUrl,
       QueryParameters params, JsonObject body) {
 
@@ -179,6 +207,14 @@ public interface CouchdbClient {
 
   }
 
+  /**
+   * Performs a PUT request and returns the result as a JsonObject.
+   *
+   * @param client  The WebClient to use for the request.
+   * @param baseUrl The base URL for the request.
+   * @param params  The query parameters to append to the URL, or null if none.
+   * @return A Future with the JsonObject result of the PUT request.
+   */
   default Future<JsonObject> putJsonObject(WebClient client, String baseUrl,
       QueryParameters params) {
 
@@ -197,6 +233,13 @@ public interface CouchdbClient {
 
   }
 
+  /**
+   * Checks if a resource exists by performing a HEAD request.
+   *
+   * @param client     The WebClient to use for the request.
+   * @param urlToCheck The URL to check for existence.
+   * @return A Future that completes when the request is complete.
+   */
   default Future<Void> doesExist(WebClient client, String urlToCheck) {
 
     Promise<Void> promise = Promise.promise();
@@ -211,6 +254,13 @@ public interface CouchdbClient {
     return promise.future();
   }
 
+  /**
+   * Retrieves the ETag header from a HEAD request.
+   *
+   * @param client     The WebClient to use for the request.
+   * @param urlToCheck The URL to retrieve the ETag from.
+   * @return A Future with the ETag header value.
+   */
   default Future<String> getEtag(WebClient client, String urlToCheck) {
 
     Promise<String> promise = Promise.promise();

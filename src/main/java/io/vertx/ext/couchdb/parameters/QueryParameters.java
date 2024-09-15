@@ -35,7 +35,7 @@ public interface QueryParameters {
   /*
    * like addParameter, but only known parameters
    */
-  default void ddParameter(String paramName, Object paramValue) {
+  default void addParameter(String paramName, Object paramValue) {
     addParameter(paramName, paramValue, false);
   }
 

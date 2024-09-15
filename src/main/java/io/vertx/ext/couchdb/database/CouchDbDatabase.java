@@ -30,7 +30,7 @@ public interface CouchDbDatabase {
 
   Future<JsonObject> status();
 
-  CouchDbStream stream(JsonObject options);
+  CouchDbStream stream(/* TODO: replace with specific object */ JsonObject options);
 
 
   Future<JsonObject> createDocument(String docId, JsonObject document);

@@ -10,6 +10,7 @@
  */
 package io.vertx.ext.couchdb.admin.impl;
 
+import java.util.regex.Pattern;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
@@ -78,9 +79,8 @@ public class CouchdbAdminImpl implements CouchdbAdmin {
   }
 
 
-  private boolean isValidDbName(String databaseName) {
-    // TODO implement regex: ^[a-z][a-z0-9_$()+/-]*$
-    return true;
+  public static boolean isValidDbName(String databaseName) {
+    return Pattern.matches("^[a-z][a-z0-9_$()+/-]*$", databaseName);
   }
 
 }
