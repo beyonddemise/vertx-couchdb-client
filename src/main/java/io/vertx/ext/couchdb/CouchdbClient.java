@@ -12,15 +12,19 @@ package io.vertx.ext.couchdb;
 
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.Credentials;
+import io.vertx.ext.couchdb.admin.CouchdbAdmin;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
 import io.vertx.ext.couchdb.exception.CouchdbException;
 import io.vertx.ext.couchdb.impl.CouchdbClientImpl;
-import io.vertx.ext.couchdb.parameters.CouchdbQueryParams;
+import io.vertx.ext.couchdb.parameters.QueryParameters;
 import io.vertx.ext.web.client.WebClient;
 
 /**
@@ -57,7 +61,7 @@ public interface CouchdbClient {
   }
 
   /**
-   * CouchDB instance status as JSON object.
+   * CouchDB server instance status as JSON object.
    *
    * @see https://docs.couchdb.org/en/stable/api/server/common.html#/
    * @return Future with the status of the CouchDB server, fails with
@@ -66,38 +70,23 @@ public interface CouchdbClient {
   Future<JsonObject> status();
 
   /**
-   * @see https://docs.couchdb.org/en/stable/api/server/common.html#active-tasks
-   * @return Future with task informaton
+   * CouchDB session status as JSON object.
+   *
+   * @see https://docs.couchdb.org/en/stable/api/server/common.html#/
+   * @return Future with the status of the CouchDB server, fails with
+   *         {@link CouchdbException} if the operation fails.
    */
-  Future<JsonArray> activeTasks(CouchdbQueryParams options);
+  Future<JsonObject> session();
 
   /**
-   * List all databases.
+   * request one or more uuids
    *
-   * @See https://docs.couchdb.org/en/stable/api/server/common.html#all-dbs
-   * @return Future with the list of databases, fails with {@link CouchdbException} if the operation
-   *         fails.
+   * @see https://docs.couchdb.org/en/stable/api/server/common.html#_uuids
+   * @return Future with the status of the CouchDB server, fails with
+   *         {@link CouchdbException} if the operation fails.
    */
-  Future<JsonArray> allDbs();
+  Future<JsonObject> uuids(int count);
 
-  /**
-   * List all databases, limited by the query parameters.
-   *
-   * @param options JsonObject with the query parameters.
-   * @return Future with the list of databases, fails with {@link CouchdbException} if the operation
-   *         fails.
-   */
-  Future<JsonArray> allDbs(CouchdbQueryParams options);
-
-  /**
-   * List all database Info, limited by the query parameters.
-   *
-   * @see https://docs.couchdb.org/en/stable/api/server/common.html#dbs-info
-   * @param options JsonObject with the query parameters.
-   * @return Future with the list of databases, fails with {@link CouchdbException} if the operation
-   *         fails.
-   */
-  Future<JsonArray> dbsInfo(CouchdbQueryParams options);
 
   /**
    * Makes a call to the CouchDB server with the given parameters.
@@ -109,41 +98,130 @@ public interface CouchdbClient {
   Future<Buffer> rawCall(JsonObject params);
 
   /**
-   * Makes a call to the CouchDB server with the given parameters.
-   * Expects a Json Object back
-   *
-   * @param params JsonObject with the headers, path, method, parameters, and payload (if any).
-   * @return Future with the result of the call, fails with {@link CouchdbException} if the
-   *         operation fails.
-   */
-  Future<Buffer> jsonObjectCall(JsonObject params);
-
-
-  /**
-   * Makes a call to the CouchDB server with the given parameters.
-   * expects a JsonArray back
-   *
-   * @param params JsonObject with the headers, path, method, parameters, and payload (if any).
-   * @return Future with the result of the call, fails with {@link CouchdbException} if the
-   *         operation fails.
-   */
-  Future<Buffer> jsonArrayCall(JsonObject params);
-
-
-  /**
-   * Creates a new database in CouchDB with the specified name and options.
-   *
-   * @param databaseName The name of the database, must follow specific naming rules.
-   * @param options JsonObject containing optional parameters for creating the database.
-   * @return Future with the result of the create operation, containing the response from CouchDB.
-   */
-  Future<CouchDbDatabase> createDb(String databaseName, JsonObject options);
-
-  /**
    * Retrieves a specified database.
    *
    * @param databaseName The name of the database, must follow specific naming rules.
    * @return Future with a CouchDbDatabase instance
    */
   Future<CouchDbDatabase> getDatabase(String databaseName);
+
+
+  /**
+   * @return the vertx instance
+   */
+  VertxInternal getVertx();
+
+  /**
+   * @return Credentials used
+   */
+  Credentials getCredentials();
+
+  /**
+   * @return Client in use
+   */
+  WebClient getWebClient();
+
+  /**
+   * @return CouchdbAdmin for administrative functions
+   */
+  Future<CouchdbAdmin> getAdmin();
+
+  default Future<JsonArray> getJsonArray(WebClient client, String baseUrl, QueryParameters params) {
+
+    String finalUrl = params == null ? baseUrl : params.appendParamsToUrl(baseUrl);
+
+    Promise<JsonArray> promise = getVertx().promise();
+    client.get(finalUrl)
+        .authentication(getCredentials())
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonArray()));
+
+    return promise.future();
+
+  }
+
+  default Future<JsonObject> getJsonObject(WebClient client, String baseUrl,
+      QueryParameters params) {
+
+    String finalUrl = params == null ? baseUrl : params.appendParamsToUrl(baseUrl);
+
+    Promise<JsonObject> promise = getVertx().promise();
+    client.get(finalUrl)
+        .authentication(getCredentials())
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
+
+    return promise.future();
+
+  }
+
+  default Future<JsonObject> putJsonObject(WebClient client, String baseUrl,
+      QueryParameters params, JsonObject body) {
+
+    String finalUrl = params == null ? baseUrl : params.appendParamsToUrl(baseUrl);
+
+    Promise<JsonObject> promise = getVertx().promise();
+    client.put(finalUrl)
+        .authentication(getCredentials())
+        .sendJson(body)
+        .expecting(HttpResponseExpectation.SC_OK)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
+
+    return promise.future();
+
+  }
+
+  default Future<JsonObject> putJsonObject(WebClient client, String baseUrl,
+      QueryParameters params) {
+
+    String finalUrl = params == null ? baseUrl : params.appendParamsToUrl(baseUrl);
+
+    Promise<JsonObject> promise = getVertx().promise();
+    client.put(finalUrl)
+        .authentication(getCredentials())
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
+
+    return promise.future();
+
+  }
+
+  default Future<Void> doesExist(WebClient client, String urlToCheck) {
+
+    Promise<Void> promise = Promise.promise();
+
+    client.head(urlToCheck)
+        .authentication(getCredentials())
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .onSuccess(v -> promise.succeed())
+        .onFailure(promise::fail);
+
+    return promise.future();
+  }
+
+  default Future<String> getEtag(WebClient client, String urlToCheck) {
+
+    Promise<String> promise = Promise.promise();
+
+    client.head(urlToCheck)
+        .authentication(getCredentials())
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .onSuccess(response -> promise.succeed(response.getHeader("ETag")))
+        .onFailure(promise::fail);
+
+    return promise.future();
+  }
 }

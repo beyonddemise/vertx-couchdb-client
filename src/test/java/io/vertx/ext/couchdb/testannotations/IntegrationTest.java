@@ -12,18 +12,19 @@
 package io.vertx.ext.couchdb.testannotations;
 
 
-import io.vertx.junit5.VertxExtension;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.testcontainers.junit.jupiter.TestcontainersExtension;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.junit.jupiter.TestcontainersExtension;
+
+import io.vertx.junit5.VertxExtension;
 
 /**
  * Interface to mark Tests as IntegrationTests for JUnit

@@ -11,31 +11,33 @@
  */
 package io.vertx.ext.couchdb.database;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.couchdb.CouchdbClient;
+import io.vertx.ext.couchdb.parameters.DocumentGetParams;
+import io.vertx.ext.couchdb.testannotations.UnitTest;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import io.vertx.ext.couchdb.testannotations.UnitTest;
-
-import java.util.concurrent.TimeUnit;
-
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 @UnitTest
 class CouchDbDatabaseTest {
@@ -53,12 +55,28 @@ class CouchDbDatabaseTest {
 
   private CouchDbDatabase database;
 
+  AutoCloseable mockCloseable;
+
   @BeforeEach
-  void setUp(Vertx vertx) {
-    MockitoAnnotations.initMocks(this);
+  void setUp(Vertx vertx, VertxTestContext testContext) {
+    mockCloseable = MockitoAnnotations.openMocks(this);
     client = CouchdbClient.create(vertx, mockWebClient,
         new UsernamePasswordCredentials("admin", "password"));
-    database = CouchDbDatabase.create(client, "test_db");
+    CouchDbDatabase.create(client, "test_db")
+        .onFailure(testContext::failNow)
+        .onSuccess(db -> {
+          database = db;
+          testContext.completeNow();
+        });
+  }
+
+  @AfterEach
+  void tearDown() {
+    try {
+      mockCloseable.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   @Test
@@ -74,7 +92,7 @@ class CouchDbDatabaseTest {
         .put("name", "Spaghetti with meatballs")
         .put("ingredients", new JsonObject().put("pasta", "spaghetti"));
 
-    database.createOrUpdateDocument("recipe_123", document).onComplete(ar -> {
+    database.createDocument("recipe_123", document).onComplete(ar -> {
       if (ar.succeeded()) {
         JsonObject result = ar.result();
         assertTrue(result.getBoolean("ok"));
@@ -98,7 +116,7 @@ class CouchDbDatabaseTest {
         .put("name", "Spaghetti with meatballs")
         .put("ingredients", new JsonObject().put("pasta", "spaghetti"));
 
-    database.createOrUpdateDocument("recipe_123", document).onComplete(ar -> {
+    database.createDocument("recipe_123", document).onComplete(ar -> {
       if (ar.failed()) {
         assertEquals("Failed to create document", ar.cause().getMessage());
         testContext.completeNow();
@@ -120,7 +138,7 @@ class CouchDbDatabaseTest {
         .put("name", "Spaghetti with meatballs")
         .put("ingredients", new JsonObject().put("pasta", "spaghetti")));
 
-    JsonObject options = new JsonObject().put("attachments", false);
+    DocumentGetParams options = new DocumentGetParams().conflicts(false);
 
     database.getDocument("recipe_123", options).onComplete(ar -> {
       if (ar.succeeded()) {
@@ -142,7 +160,7 @@ class CouchDbDatabaseTest {
     when(mockHttpRequest.send())
         .thenReturn(Future.failedFuture(new Exception("Document not found")));
 
-    JsonObject options = new JsonObject().put("attachments", false);
+    DocumentGetParams options = new DocumentGetParams().conflicts(false);
 
     database.getDocument("non_existing_doc", options).onComplete(ar -> {
       if (ar.failed()) {
@@ -161,7 +179,7 @@ class CouchDbDatabaseTest {
     when(mockWebClient.request(any(), anyString())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.send()).thenReturn(Future.failedFuture(new Exception("Bad request")));
 
-    JsonObject options = new JsonObject().put("attachments", false);
+    DocumentGetParams options = new DocumentGetParams().conflicts(false);
 
     database.getDocument("invalid_doc_id", options).onComplete(ar -> {
       if (ar.failed()) {

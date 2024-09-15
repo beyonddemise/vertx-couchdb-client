@@ -8,10 +8,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.ext.couchdb.parameters;
+package io.vertx.ext.couchdb.utils;
 
-public interface QueryParameter {
+import io.vertx.core.json.JsonArray;
 
-  public String appendParams(final String source);
+public interface JsonArraySerializable {
+
+  JsonArray toJson();
 
 }
