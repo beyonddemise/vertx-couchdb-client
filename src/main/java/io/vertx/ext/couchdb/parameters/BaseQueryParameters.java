@@ -13,6 +13,7 @@ package io.vertx.ext.couchdb.parameters;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collector;
@@ -23,7 +24,7 @@ import io.vertx.ext.couchdb.utils.JsonObjectSerializable;
 
 public class BaseQueryParameters implements QueryParameters, JsonObjectSerializable {
 
-  protected Map<String, Object> paramStore;
+  protected final Map<String, Object> paramStore = new HashMap<>();
 
   @Override
   public JsonObject toJson() {

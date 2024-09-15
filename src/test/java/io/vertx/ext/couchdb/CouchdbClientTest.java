@@ -10,14 +10,14 @@
  */
 package io.vertx.ext.couchdb;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
-import static io.netty.handler.codec.http.HttpResponseStatus.PRECONDITION_FAILED;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.concurrent.TimeUnit;
@@ -59,6 +59,7 @@ class CouchdbClientTest {
 
   @BeforeEach
   void setUp(Vertx vertx) {
+    lenient().when(mockWebClient.head(anyString())).thenReturn(mockHttpRequest);
     client = CouchdbClient.create(vertx, mockWebClient,
         new UsernamePasswordCredentials("admin", "password"));
     admin = CouchdbAdmin.get(client);
@@ -94,6 +95,7 @@ class CouchdbClientTest {
   @Test
   void testCreateDbSuccess(VertxTestContext testContext) throws InterruptedException {
     when(mockWebClient.put(anyString())).thenReturn(mockHttpRequest);
+    when(mockWebClient.head(anyString())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.addQueryParam(anyString(), anyString())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.authentication(any())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
@@ -113,10 +115,11 @@ class CouchdbClientTest {
   @Test
   void testCreateDbDatabaseAlreadyExists(VertxTestContext testContext) throws InterruptedException {
     when(mockWebClient.put(anyString())).thenReturn(mockHttpRequest);
+    when(mockWebClient.head(anyString())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.addQueryParam(anyString(), anyString())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.authentication(any())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
-    when(mockHttpResponse.statusCode()).thenReturn(PRECONDITION_FAILED.code());
+    when(mockHttpResponse.statusCode()).thenReturn(OK.code());
     when(mockHttpResponse.bodyAsJsonObject())
         .thenReturn(new JsonObject().put("error", "file_exists").put("reason",
             "The database could not be created, the file already exists."));
@@ -126,7 +129,7 @@ class CouchdbClientTest {
     result.onComplete(ar -> {
       if (ar.failed()) {
         assertEquals(
-            "Error creating database: file_exists - The database could not be created, the file already exists.",
+            "database does exist",
             ar.cause().getMessage());
         testContext.completeNow();
       } else {
@@ -139,21 +142,13 @@ class CouchdbClientTest {
 
   @Test
   void testCreateDbInvalidDatabaseName(VertxTestContext testContext) throws InterruptedException {
-    when(mockWebClient.put(anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.addQueryParam(anyString(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.authentication(any())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
-    when(mockHttpResponse.statusCode()).thenReturn(BAD_REQUEST.code());
-    when(mockHttpResponse.bodyAsJsonObject())
-        .thenReturn(new JsonObject().put("error", "illegal_database_name").put("reason",
-            "Name: '_invalid_db'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter."));
 
     Future<CouchDbDatabase> result = admin.createDb("_invalid_db", new DbCreateParams());
 
     result.onComplete(ar -> {
       if (ar.failed()) {
         assertEquals(
-            "Error creating database: illegal_database_name - Name: '_invalid_db'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter.",
+            "Not a valid database name",
             ar.cause().getMessage());
         testContext.completeNow();
       } else {
@@ -168,7 +163,7 @@ class CouchdbClientTest {
   void testCreateDbUnauthorized(Vertx vertx, VertxTestContext testContext)
       throws InterruptedException {
     when(mockWebClient.put(anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.addQueryParam(anyString(), anyString())).thenReturn(mockHttpRequest);
+    when(mockWebClient.head(anyString())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.authentication(any())).thenReturn(mockHttpRequest);
     when(mockHttpRequest.send()).thenReturn(Future.failedFuture(
         new Exception("Error creating database: unauthorized - Name or password is incorrect.")));

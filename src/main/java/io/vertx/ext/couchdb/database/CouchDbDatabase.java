@@ -10,7 +10,6 @@
  */
 package io.vertx.ext.couchdb.database;
 
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
@@ -19,7 +18,6 @@ import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.database.impl.CouchDbDatabaseImpl;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
 
-@VertxGen
 public interface CouchDbDatabase {
 
   static Future<CouchDbDatabase> create(CouchdbClient client, String databaseName) {
@@ -31,7 +29,6 @@ public interface CouchDbDatabase {
   Future<JsonObject> status();
 
   CouchDbStream stream(/* TODO: replace with specific object */ JsonObject options);
-
 
   Future<JsonObject> createDocument(String docId, JsonObject document);
 

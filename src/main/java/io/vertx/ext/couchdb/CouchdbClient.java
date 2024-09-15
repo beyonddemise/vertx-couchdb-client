@@ -11,7 +11,6 @@
 
 package io.vertx.ext.couchdb;
 
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -36,7 +35,6 @@ import io.vertx.ext.web.client.WebClient;
  *
  * @author <a href="https://wissel.net">Stephan Wissel</a>
  */
-@VertxGen
 public interface CouchdbClient {
 
   /**

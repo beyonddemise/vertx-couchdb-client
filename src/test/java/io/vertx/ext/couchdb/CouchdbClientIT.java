@@ -44,12 +44,12 @@ public class CouchdbClientIT {
 
   @SuppressWarnings("resource")
   @Container
-  private static final GenericContainer<?> couchdbContainer =
-      new GenericContainer<>(DockerImageName.parse("couchdb:3.3.3"))
-          .withExposedPorts(COUCHDB_PORT)
-          .withEnv("COUCHDB_USER", "admin")
-          .withEnv("COUCHDB_PASSWORD", "password")
-          .waitingFor(Wait.forListeningPort());
+  private static final GenericContainer<?> couchdbContainer = new GenericContainer<>(
+      DockerImageName.parse("couchdb:3.3.3"))
+      .withExposedPorts(COUCHDB_PORT)
+      .withEnv("COUCHDB_USER", "admin")
+      .withEnv("COUCHDB_PASSWORD", "password")
+      .waitingFor(Wait.forListeningPort());
 
   private static CouchdbClient client;
 
@@ -115,7 +115,7 @@ public class CouchdbClientIT {
     admin.createDb("_invalid_db", null)
         .onFailure(err -> testContext.verify(() -> {
           assertEquals(
-              "Error creating database: illegal_database_name - Name: '_invalid_db'. Only lowercase characters (a-z), digits (0-9), and any of the characters _, $, (, ), +, -, and / are allowed. Must begin with a letter.",
+              "Not a valid database name",
               err.getMessage());
           testContext.completeNow();
         }))
@@ -149,7 +149,6 @@ public class CouchdbClientIT {
 
     testContext.awaitCompletion(5, TimeUnit.SECONDS);
   }
-
 
   protected static String getCouchdbHost() {
     return couchdbContainer.getHost();
