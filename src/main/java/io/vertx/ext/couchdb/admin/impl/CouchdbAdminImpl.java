@@ -19,6 +19,8 @@ import io.vertx.ext.couchdb.admin.CouchdbAdmin;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
 import io.vertx.ext.couchdb.parameters.DbCreateParams;
 import io.vertx.ext.couchdb.parameters.DbQueryParams;
+import io.vertx.ext.couchdb.parameters.PathParameterTemplates;
+import io.vertx.uritemplate.UriTemplate;
 
 public class CouchdbAdminImpl implements CouchdbAdmin {
 
@@ -35,8 +37,8 @@ public class CouchdbAdminImpl implements CouchdbAdmin {
 
   @Override
   public Future<JsonArray> activeTasks() {
-    String baseUrl = "/_active_tasks";
-    return this.client.getJsonArray(this.client.getWebClient(), baseUrl, null);
+    UriTemplate baseUrl = UriTemplate.of("/_active_tasks");
+    return this.client.getJsonArray(baseUrl, null);
   }
 
   @Override
@@ -46,16 +48,16 @@ public class CouchdbAdminImpl implements CouchdbAdmin {
 
   @Override
   public Future<JsonArray> allDbs(DbQueryParams options) {
-    String baseUrl = "/_all_dbs";
-    return this.client.getJsonArray(this.client.getWebClient(), baseUrl, options);
+    UriTemplate baseUrl = UriTemplate.of("/_all_dbs" + PathParameterTemplates.QUERY);
+    return this.client.getJsonArray(baseUrl, options);
   }
 
   @Override
   public Future<JsonArray> dbsInfo(DbQueryParams options) {
-    String baseUrl = "/_dbs_info";
-    return this.client.getJsonArray(this.client.getWebClient(), baseUrl, options);
+    UriTemplate baseUrl = UriTemplate.of("/_dbs_info" + PathParameterTemplates.QUERY);
+    ;
+    return this.client.getJsonArray(baseUrl, options);
   }
-
 
   @Override
   public Future<CouchDbDatabase> createDb(String databaseName, DbCreateParams options) {
@@ -65,22 +67,22 @@ public class CouchdbAdminImpl implements CouchdbAdmin {
     }
 
     Promise<CouchDbDatabase> promise = Promise.promise();
-    String urlToCheck = "/" + databaseName;
+    UriTemplate urlToCheck = PathParameterTemplates.database(databaseName);
 
     // This call success means db exists and thos promise fails
-    this.client.doesExist(this.client.getWebClient(), urlToCheck)
+    this.client.doesExist(urlToCheck)
         .onFailure(err ->
         // DB Doesn't exist, so we can create it
-        this.client.putJsonObject(this.client.getWebClient(), urlToCheck, options)
+        this.client.putJsonObject(urlToCheck, options)
             .onFailure(promise::fail) /* TODO: capture error/reason */
             .onSuccess(v -> CouchDbDatabase.create(this.client, databaseName)))
         .onSuccess(v -> promise.fail("database does exist"));
     return promise.future();
   }
 
-
   public static boolean isValidDbName(String databaseName) {
     return Pattern.matches("^[a-z][a-z0-9_$()+/-]*$", databaseName);
   }
 
+  // TODO: add admin actions
 }

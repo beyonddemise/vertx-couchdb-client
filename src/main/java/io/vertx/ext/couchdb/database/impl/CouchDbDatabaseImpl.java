@@ -15,15 +15,15 @@ import java.util.Objects;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.CouchDbStream;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
 import io.vertx.ext.couchdb.parameters.BaseQueryParameters;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
+import io.vertx.ext.couchdb.parameters.PathParameterTemplates;
 import io.vertx.uritemplate.UriTemplate;
-import io.vertx.uritemplate.Variables;
 
 public class CouchDbDatabaseImpl implements CouchDbDatabase {
 
@@ -34,22 +34,22 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
   /**
    * Create does create the JavaObject, not the couchDB
    *
-   * @param client CouchDBClient
+   * @param client       CouchDBClient
    * @param databaseName String
    * @return Future of CouchDbDatabase
    */
   public static Future<CouchDbDatabase> create(CouchdbClient client, String databaseName) {
 
     Promise<CouchDbDatabase> promise = Promise.promise();
+    UriTemplate urlToCheck = PathParameterTemplates.database(databaseName);
 
-    client.doesExist(client.getWebClient(), "/" + databaseName)
+    client.doesExist(urlToCheck)
         .onSuccess(v -> promise.succeed(new CouchDbDatabaseImpl(client, databaseName)))
         .onFailure(promise::fail);
 
     return promise.future();
 
   }
-
 
   CouchDbDatabaseImpl(CouchdbClient client, String databaseName) {
     this.client = client;
@@ -68,12 +68,12 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
     Objects.requireNonNull(document);
 
     Promise<JsonObject> promise = Promise.promise();
-    String urlToCheck = String.format("/%s/%s", this.databaseName, docId);
+    UriTemplate urlToCheck = PathParameterTemplates.databaseDocumentId(databaseName, docId);
 
-    this.client.doesExist(this.client.getWebClient(), urlToCheck)
+    this.client.doesExist(urlToCheck)
         .onSuccess(v -> promise.fail("Document alreday exists"))
         .onFailure(
-            err -> this.client.putJsonObject(this.client.getWebClient(), urlToCheck, null, document)
+            err -> this.client.putJsonObject(urlToCheck, null, document)
                 .onFailure(promise::fail)
                 .onSuccess(promise::succeed));
 
@@ -93,14 +93,14 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
     BaseQueryParameters params = new BaseQueryParameters();
     params.addParameter("rev", rev, true);
     Promise<JsonObject> promise = Promise.promise();
-    String urlToCheck = String.format("/%s/%s", this.databaseName, docId);
+    UriTemplate urlToCheck = PathParameterTemplates.databaseDocumentId(databaseName, docId);
 
-    this.client.getEtag(this.client.getWebClient(), urlToCheck)
+    this.client.getEtag(urlToCheck)
         .onSuccess(curRev -> {
           if (!curRev.equals(rev)) {
             promise.fail("Existing rev/ETag doesn't match rev param");
           } else {
-            this.client.putJsonObject(this.client.getWebClient(), urlToCheck, params, document)
+            this.client.putJsonObject(urlToCheck, params, document)
                 .onFailure(promise::fail)
                 .onSuccess(promise::succeed);
           }
@@ -112,16 +112,14 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
 
   @Override
   public Future<JsonObject> getDocument(String docId, DocumentGetParams options) {
-    String urlToCheck = String.format("/%s/%s", this.databaseName, docId);
-    return client.getJsonObject(this.client.getWebClient(), urlToCheck, options);
+    UriTemplate urlToCheck = PathParameterTemplates.databaseDocumentId(databaseName, docId);
+    return client.getJsonObject(urlToCheck, options);
   }
-
-
 
   @Override
   public Future<JsonObject> status() {
-    String urlToCheck = String.format("/%s/", databaseName);
-    return this.client.getJsonObject(this.client.getWebClient(), urlToCheck, null);
+    UriTemplate urlToCheck = PathParameterTemplates.database(databaseName);
+    return this.client.getJsonObject(urlToCheck, null);
   }
 
   @Override
@@ -134,18 +132,9 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
     if (rev != null) {
       params.addParameter("rev", rev, true);
     }
-    UriTemplate template = UriTemplate.of("/{db}/{doc}/{attname}");
-    Variables variables = Variables.variables()
-        .set("db", this.databaseName)
-        .set("doc", docId)
-        .set("attname", attachementName);
+    UriTemplate urlToCheck = PathParameterTemplates.attachment(this.databaseName, docId, attachementName);
 
-    String urlToCheck = params.appendParamsToUrl(template.expandToString(variables));
-
-    this.client.getWebClient().get(urlToCheck)
-        .authentication(this.client.getCredentials())
-        .send()
-        .expecting(HttpResponseExpectation.SC_OK)
+    this.client.noBody(HttpMethod.GET, urlToCheck, params)
         .onSuccess(response -> promise.succeed(response.body()))
         .onFailure(promise::fail);
 
@@ -156,20 +145,16 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
   public Future<JsonObject> deleteDocument(String docId, String rev, boolean force) {
 
     Promise<JsonObject> promise = Promise.promise();
-
-    String urlToCheck = String.format("/%s/%s", this.databaseName, docId);
-    this.client.getEtag(this.client.getWebClient(), urlToCheck)
+    UriTemplate urlToCheck = PathParameterTemplates.databaseDocumentId(databaseName, docId);
+    this.client.getEtag(urlToCheck)
         .onFailure(promise::fail)
         .onSuccess(eTag -> {
           if (force || rev.equals(eTag)) {
-
-            this.client.getWebClient().delete(urlToCheck)
-                .addQueryParam("rev", eTag)
-                .send()
-                .expecting(HttpResponseExpectation.SC_OK)
-                .expecting(HttpResponseExpectation.JSON)
+            BaseQueryParameters params = new BaseQueryParameters();
+            params.addParameter("rev", eTag);
+            this.client.deleteJsonObject(urlToCheck, params)
                 .onFailure(promise::fail)
-                .onSuccess(response -> promise.succeed(response.bodyAsJsonObject()));
+                .onSuccess(promise::succeed);
           } else {
             promise.fail("rev / eTag mismatch");
           }
@@ -178,7 +163,6 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
 
     return promise.future();
   }
-
 
   @Override
   public CouchDbStream stream(JsonObject options) {

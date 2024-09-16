@@ -12,20 +12,16 @@
 package io.vertx.ext.couchdb;
 
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpResponseExpectation;
-import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.couchdb.admin.CouchdbAdmin;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
 import io.vertx.ext.couchdb.exception.CouchdbException;
-import io.vertx.ext.couchdb.impl.CouchdbClientImpl;
 import io.vertx.ext.couchdb.parameters.QueryParameters;
-import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.HttpResponse;
+import io.vertx.uritemplate.UriTemplate;
 
 /**
  * A Vert.x service used to interact with CouchDB server instances.
@@ -36,29 +32,6 @@ import io.vertx.ext.web.client.WebClient;
  * @author <a href="https://wissel.net">Stephan Wissel</a>
  */
 public interface CouchdbClient {
-
-  /**
-   * Create a CouchDB client with a WebClient instance.
-   *
-   * @param vertx  the Vert.x instance
-   * @param client the WebClient instance
-   * @return the client
-   */
-  static CouchdbClient create(Vertx vertx, WebClient client) {
-    return CouchdbClientImpl.create(vertx, client);
-  }
-
-  /**
-   * Create a CouchDB client with a WebClient instance and credentials.
-   *
-   * @param vertx       the Vert.x instance
-   * @param client      the WebClient instance
-   * @param credentials the credentials for authentication
-   * @return the client
-   */
-  static CouchdbClient create(Vertx vertx, WebClient client, Credentials credentials) {
-    return CouchdbClientImpl.create(vertx, client, credentials);
-  }
 
   /**
    * CouchDB server instance status as JSON object.
@@ -96,6 +69,7 @@ public interface CouchdbClient {
    *         {@link CouchdbException} if the
    *         operation fails.
    */
+  @Deprecated
   Future<Buffer> rawCall(JsonObject params);
 
   /**
@@ -108,21 +82,6 @@ public interface CouchdbClient {
   Future<CouchDbDatabase> getDatabase(String databaseName);
 
   /**
-   * @return the vertx instance
-   */
-  VertxInternal getVertx();
-
-  /**
-   * @return Credentials used
-   */
-  Credentials getCredentials();
-
-  /**
-   * @return Client in use
-   */
-  WebClient getWebClient();
-
-  /**
    * @return CouchdbAdmin for administrative functions
    */
   Future<CouchdbAdmin> getAdmin();
@@ -130,146 +89,73 @@ public interface CouchdbClient {
   /**
    * Performs a GET request and returns the result as a JsonArray.
    *
-   * @param client  The WebClient to use for the request.
    * @param baseUrl The base URL for the request.
    * @param params  The query parameters to append to the URL, or null if none.
    * @return A Future with the JsonArray result of the GET request.
    */
-  default Future<JsonArray> getJsonArray(WebClient client, String baseUrl, QueryParameters params) {
-
-    String finalUrl = params == null ? baseUrl : params.appendParamsToUrl(baseUrl);
-
-    Promise<JsonArray> promise = getVertx().promise();
-    client.get(finalUrl)
-        .authentication(getCredentials())
-        .send()
-        .expecting(HttpResponseExpectation.SC_OK)
-        .expecting(HttpResponseExpectation.JSON)
-        .onFailure(promise::fail)
-        .onSuccess(response -> promise.complete(response.bodyAsJsonArray()));
-
-    return promise.future();
-
-  }
+  Future<JsonArray> getJsonArray(UriTemplate baseUrl, QueryParameters params);
 
   /**
    * Performs a GET request and returns the result as a JsonObject.
    *
-   * @param client  The WebClient to use for the request.
    * @param baseUrl The base URL for the request.
    * @param params  The query parameters to append to the URL, or null if none.
    * @return A Future with the JsonObject result of the GET request.
    */
-  default Future<JsonObject> getJsonObject(WebClient client, String baseUrl,
-      QueryParameters params) {
-
-    String finalUrl = params == null ? baseUrl : params.appendParamsToUrl(baseUrl);
-
-    Promise<JsonObject> promise = getVertx().promise();
-    client.get(finalUrl)
-        .authentication(getCredentials())
-        .send()
-        .expecting(HttpResponseExpectation.SC_OK)
-        .expecting(HttpResponseExpectation.JSON)
-        .onFailure(promise::fail)
-        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
-
-    return promise.future();
-
-  }
+  Future<JsonObject> getJsonObject(UriTemplate baseUrl, QueryParameters params);
 
   /**
-   * Performs a PUT request and returns the result as a JsonObject.
+   * Performs a PUT request without a body and returns the result as a JsonObject.
    *
-   * @param client  The WebClient to use for the request.
+   * @param baseUrl The base URL for the request.
+   * @param params  The query parameters to append to the URL, or null if none.
+   * @return A Future with the JsonObject result of the PUT request.
+   */
+  Future<JsonObject> putJsonObject(UriTemplate baseUrl, QueryParameters params);
+
+  /**
+   * Performs a PUT request with a body and returns the result as a JsonObject.
+   *
    * @param baseUrl The base URL for the request.
    * @param params  The query parameters to append to the URL, or null if none.
    * @param body    The JSON body to send in the PUT request.
    * @return A Future with the JsonObject result of the PUT request.
    */
-  default Future<JsonObject> putJsonObject(WebClient client, String baseUrl,
-      QueryParameters params, JsonObject body) {
-
-    String finalUrl = params == null ? baseUrl : params.appendParamsToUrl(baseUrl);
-
-    Promise<JsonObject> promise = getVertx().promise();
-    client.put(finalUrl)
-        .authentication(getCredentials())
-        .sendJson(body)
-        .expecting(HttpResponseExpectation.SC_OK)
-        .expecting(HttpResponseExpectation.JSON)
-        .onFailure(promise::fail)
-        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
-
-    return promise.future();
-
-  }
+  Future<JsonObject> putJsonObject(UriTemplate baseUrl, QueryParameters params, JsonObject body);
 
   /**
-   * Performs a PUT request and returns the result as a JsonObject.
+   * Performs a DELETE request and returns the result as a JsonObject.
    *
-   * @param client  The WebClient to use for the request.
    * @param baseUrl The base URL for the request.
    * @param params  The query parameters to append to the URL, or null if none.
    * @return A Future with the JsonObject result of the PUT request.
    */
-  default Future<JsonObject> putJsonObject(WebClient client, String baseUrl,
-      QueryParameters params) {
-
-    String finalUrl = params == null ? baseUrl : params.appendParamsToUrl(baseUrl);
-
-    Promise<JsonObject> promise = getVertx().promise();
-    client.put(finalUrl)
-        .authentication(getCredentials())
-        .send()
-        .expecting(HttpResponseExpectation.SC_OK)
-        .expecting(HttpResponseExpectation.JSON)
-        .onFailure(promise::fail)
-        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
-
-    return promise.future();
-
-  }
+  Future<JsonObject> deleteJsonObject(UriTemplate baseUrl, QueryParameters params);
 
   /**
    * Checks if a resource exists by performing a HEAD request.
    *
-   * @param client     The WebClient to use for the request.
-   * @param urlToCheck The URL to check for existence.
+   * @param urlToCheck UriTemplate The URL to check for existence.
    * @return A Future that completes when the request is complete.
    */
-  default Future<Void> doesExist(WebClient client, String urlToCheck) {
-
-    Promise<Void> promise = Promise.promise();
-
-    client.head(urlToCheck)
-        .authentication(getCredentials())
-        .send()
-        .expecting(HttpResponseExpectation.SC_OK)
-        .onSuccess(v -> promise.succeed())
-        .onFailure(promise::fail);
-
-    return promise.future();
-  }
+  Future<Void> doesExist(UriTemplate urlToCheck);
 
   /**
    * Retrieves the ETag header from a HEAD request.
    *
-   * @param client     The WebClient to use for the request.
    * @param urlToCheck The URL to retrieve the ETag from.
    * @return A Future with the ETag header value.
    */
-  default Future<String> getEtag(WebClient client, String urlToCheck) {
+  Future<String> getEtag(UriTemplate urlToCheck);
 
-    Promise<String> promise = Promise.promise();
-
-    client.head(urlToCheck)
-        .authentication(getCredentials())
-        .send()
-        .expecting(HttpResponseExpectation.SC_OK)
-        .onSuccess(response -> promise.succeed(response.getHeader("ETag")))
-        .onFailure(promise::fail);
-
-    return promise.future();
-  }
+  /**
+   * Performs a HttpRequest request using the provided UriTemplate and
+   * QueryParameters.
+   *
+   * @param method  The HttpMethod to be used for the request.
+   * @param baseUrl The UriTemplate representing the base URL for the request.
+   * @param params  The QueryParameters to be applied to the request.
+   * @return A Future containing the HttpResponse with a Buffer body.
+   */
+  Future<HttpResponse<Buffer>> noBody(HttpMethod method, UriTemplate baseUrl, QueryParameters params);
 }

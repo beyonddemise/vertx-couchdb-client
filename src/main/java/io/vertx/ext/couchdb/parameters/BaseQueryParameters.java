@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.utils.JsonObjectSerializable;
 
@@ -57,7 +58,6 @@ public class BaseQueryParameters implements QueryParameters, JsonObjectSerializa
       return sourceUrl;
     }
 
-    // TODO: Can we use URiTemplate here?
     return sourceUrl + "?" + this.paramStore.entrySet().stream()
         .map(entry -> entry.getKey() + "=" + String.valueOf(entry.getValue()))
         .collect(Collectors.joining("&"));
@@ -65,6 +65,44 @@ public class BaseQueryParameters implements QueryParameters, JsonObjectSerializa
 
   protected String urlEncoded(String source) {
     return URLEncoder.encode(source, StandardCharsets.UTF_8);
+  }
+
+  @Override
+  public Map<String, String> forTemplate() {
+    Map<String, String> result = new HashMap<>();
+    this.paramStore.forEach((key, value) -> {
+      result.put(key, this.valueOf(value));
+    });
+    return result;
+  }
+
+  /**
+   * Converts an object to its string representation.
+   * 
+   * <p>
+   * This method handles different types of objects:
+   * <ul>
+   * <li>If the object is a {@link JsonObject}, it returns its JSON string
+   * representation.</li>
+   * <li>If the object is a {@link JsonArray}, it returns its JSON string
+   * representation.</li>
+   * <li>For all other types, it returns the result of
+   * {@link String#valueOf(Object)}.</li>
+   * </ul>
+   * 
+   * @param value The object to be converted to a string.
+   * @return The string representation of the object.
+   */
+  private String valueOf(Object value) {
+    if (value instanceof JsonObject) {
+      return ((JsonObject) value).encode();
+    }
+
+    if (value instanceof JsonArray) {
+      return ((JsonArray) value).encode();
+    }
+
+    return String.valueOf(value);
   }
 
 }

@@ -32,6 +32,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.couchdb.CouchdbClient;
+import io.vertx.ext.couchdb.CouchdbClientBuilder;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
 import io.vertx.ext.couchdb.testannotations.UnitTest;
 import io.vertx.ext.web.client.HttpRequest;
@@ -60,8 +61,9 @@ class CouchDbDatabaseTest {
   @BeforeEach
   void setUp(Vertx vertx, VertxTestContext testContext) {
     mockCloseable = MockitoAnnotations.openMocks(this);
-    client = CouchdbClient.create(vertx, mockWebClient,
-        new UsernamePasswordCredentials("admin", "password"));
+    client = new CouchdbClientBuilder(vertx, mockWebClient)
+        .credentials(new UsernamePasswordCredentials("admin", "password"))
+        .build();
     CouchDbDatabase.create(client, "test_db")
         .onFailure(testContext::failNow)
         .onSuccess(db -> {

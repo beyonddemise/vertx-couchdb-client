@@ -60,8 +60,10 @@ class CouchdbClientTest {
   @BeforeEach
   void setUp(Vertx vertx) {
     lenient().when(mockWebClient.head(anyString())).thenReturn(mockHttpRequest);
-    client = CouchdbClient.create(vertx, mockWebClient,
-        new UsernamePasswordCredentials("admin", "password"));
+
+    client = new CouchdbClientBuilder(vertx, mockWebClient)
+        .credentials(new UsernamePasswordCredentials("admin", "password"))
+        .build();
     admin = CouchdbAdmin.get(client);
   }
 
@@ -168,8 +170,9 @@ class CouchdbClientTest {
     when(mockHttpRequest.send()).thenReturn(Future.failedFuture(
         new Exception("Error creating database: unauthorized - Name or password is incorrect.")));
 
-    CouchdbClient unauthorizedClient = CouchdbClient.create(vertx, mockWebClient,
-        new UsernamePasswordCredentials("invalid_user", "invalid_password"));
+    CouchdbClient unauthorizedClient = new CouchdbClientBuilder(vertx, mockWebClient)
+        .credentials(new UsernamePasswordCredentials("invalid_user", "invalid_password"))
+        .build();
     CouchdbAdmin badadmin = CouchdbAdmin.get(unauthorizedClient);
 
     badadmin.createDb("unauthorized_db", new DbCreateParams()).onComplete(ar -> {
