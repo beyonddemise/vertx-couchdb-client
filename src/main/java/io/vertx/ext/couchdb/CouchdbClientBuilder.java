@@ -98,7 +98,7 @@ public class CouchdbClientBuilder {
    * @param https The boolean value to use for the client.
    * @return The CouchdbClientBuilder instance.
    */
-  public CouchdbClientBuilder setHttps(boolean https) {
+  public CouchdbClientBuilder https(boolean https) {
     this.https = https;
     return this;
   }
