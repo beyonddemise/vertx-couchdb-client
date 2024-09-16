@@ -10,182 +10,172 @@
  */
 package io.vertx.ext.couchdb;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.concurrent.TimeUnit;
-
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
-import io.vertx.ext.couchdb.admin.CouchdbAdmin;
-import io.vertx.ext.couchdb.database.CouchDbDatabase;
-import io.vertx.ext.couchdb.parameters.DbCreateParams;
+import io.vertx.ext.auth.authentication.Credentials;
+import io.vertx.ext.couchdb.parameters.BaseQueryParameters;
+import io.vertx.ext.couchdb.parameters.QueryParameters;
 import io.vertx.ext.couchdb.testannotations.UnitTest;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxTestContext;
+import io.vertx.uritemplate.UriTemplate;
 
 @UnitTest
-class CouchdbClientTest {
+public class CouchdbClientTest {
 
   @Mock
-  private WebClient mockWebClient;
+  WebClient mockWebClient;
 
   @Mock
-  private HttpRequest<Buffer> mockHttpRequest;
+  HttpRequest<Buffer> mockHttpRequest;
 
   @Mock
-  private HttpResponse<Buffer> mockHttpResponse;
+  HttpResponse<Buffer> mockHttpResponse;
 
-  private CouchdbClient client;
+  CouchdbClient client;
 
-  private CouchdbAdmin admin;
+  AutoCloseable mockCloseable;
 
   @BeforeEach
-  void setUp(Vertx vertx) {
-    lenient().when(mockWebClient.head(anyString())).thenReturn(mockHttpRequest);
+  void setUp(Vertx vertx, VertxTestContext testContext) {
+    mockCloseable = MockitoAnnotations.openMocks(this);
 
-    client = new CouchdbClientBuilder(vertx, mockWebClient)
-        .credentials(new UsernamePasswordCredentials("admin", "password"))
-        .build();
-    admin = CouchdbAdmin.get(client);
+    MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+    headers.add("ETag", "123456");
+    headers.add("Content-Type", "application/json");
+
+    client = new CouchdbClientBuilder(vertx, mockWebClient).build();
+    lenient().when(mockWebClient.request(any(HttpMethod.class), any(Integer.class), any(), any(UriTemplate.class)))
+        .thenReturn(mockHttpRequest);
+
+    lenient().when(mockHttpRequest.authentication(any(Credentials.class))).thenReturn(mockHttpRequest);
+    lenient().when(mockHttpRequest.ssl(any())).thenReturn(mockHttpRequest);
+    lenient().when(mockHttpRequest.setTemplateParam(any(), anyMap())).thenReturn(mockHttpRequest);
+    lenient().when(mockHttpRequest.sendJson(any())).thenReturn(Future.succeededFuture(mockHttpResponse));
+    lenient().when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
+
+    lenient().when(mockHttpResponse.statusCode()).thenReturn(200);
+    lenient().when(mockHttpResponse.headers()).thenReturn(headers);
+
+    testContext.completeNow();
+
+  }
+
+  @AfterEach
+  void tearDown() throws Exception {
+    mockCloseable.close();
+    client = null;
   }
 
   @Test
-  void testCreate() {
-    assertNotNull(client);
-  }
-
-  @Test
-  void testCreateAdmin() {
-    assertNotNull(admin);
-  }
-
-  @Test
-  @Disabled("To be refactored")
-  void testStatus(VertxTestContext testContext) throws InterruptedException {
-    Future<JsonObject> future = client.status();
-    future.onComplete(ar -> {
-      if (ar.succeeded()) {
-        JsonObject status = ar.result();
-        assertNotNull(status);
-        assertEquals("Welcome", status.getString("couchdb"));
-        testContext.completeNow();
-      } else {
-        testContext.failNow(ar.cause());
-      }
-    });
-    testContext.awaitCompletion(5, TimeUnit.SECONDS);
-  }
-
-  @Test
-  void testCreateDbSuccess(VertxTestContext testContext) throws InterruptedException {
-    when(mockWebClient.put(anyString())).thenReturn(mockHttpRequest);
-    when(mockWebClient.head(anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.addQueryParam(anyString(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.authentication(any())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
-    when(mockHttpResponse.statusCode()).thenReturn(CREATED.code());
-    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(new JsonObject().put("ok", true));
-
-    admin.createDb("new_db", new DbCreateParams())
-        .onFailure(testContext::failNow)
-        .onSuccess(db -> testContext.verify(() -> {
-          assertNotNull(db);
-          assertEquals("new_db", db.name());
-          testContext.completeNow();
-        }));
+  void testDeleteJsonObject(Vertx vertx, VertxTestContext testContext) {
+    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(new JsonObject());
+    UriTemplate template = UriTemplate.of("/db/doc");
+    QueryParameters params = new BaseQueryParameters();
+    params.addParameter("rev", "1-xxx", true);
+    client.deleteJsonObject(template, params)
+        .onSuccess(json -> {
+          testContext.verify(() -> {
+            assertNotNull(json);
+            verify(mockWebClient).request(eq(HttpMethod.DELETE), anyInt(), anyString(), eq(template));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
 
   }
 
   @Test
-  void testCreateDbDatabaseAlreadyExists(VertxTestContext testContext) throws InterruptedException {
-    when(mockWebClient.put(anyString())).thenReturn(mockHttpRequest);
-    when(mockWebClient.head(anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.addQueryParam(anyString(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.authentication(any())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
-    when(mockHttpResponse.statusCode()).thenReturn(OK.code());
-    when(mockHttpResponse.bodyAsJsonObject())
-        .thenReturn(new JsonObject().put("error", "file_exists").put("reason",
-            "The database could not be created, the file already exists."));
+  void testDoesExist(Vertx vertx, VertxTestContext testContext) {
+    UriTemplate template = UriTemplate.of("/db/doc");
 
-    Future<CouchDbDatabase> result = admin.createDb("existing_db", new DbCreateParams());
+    client.doesExist(template)
+        .onSuccess(result -> {
+          testContext.verify(() -> {
+            verify(mockWebClient).request(eq(HttpMethod.HEAD), anyInt(), anyString(), eq(template));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
 
-    result.onComplete(ar -> {
-      if (ar.failed()) {
-        assertEquals(
-            "database does exist",
-            ar.cause().getMessage());
-        testContext.completeNow();
-      } else {
-        testContext.failNow(new AssertionError("Expected to fail, but succeeded"));
-      }
-    });
-
-    testContext.awaitCompletion(5, TimeUnit.SECONDS);
   }
 
   @Test
-  void testCreateDbInvalidDatabaseName(VertxTestContext testContext) throws InterruptedException {
+  void testGetAdmin(Vertx vertx, VertxTestContext testContext) {
 
-    Future<CouchDbDatabase> result = admin.createDb("_invalid_db", new DbCreateParams());
-
-    result.onComplete(ar -> {
-      if (ar.failed()) {
-        assertEquals(
-            "Not a valid database name",
-            ar.cause().getMessage());
-        testContext.completeNow();
-      } else {
-        testContext.failNow(new AssertionError("Expected to fail, but succeeded"));
-      }
-    });
-
-    testContext.awaitCompletion(5, TimeUnit.SECONDS);
   }
 
   @Test
-  void testCreateDbUnauthorized(Vertx vertx, VertxTestContext testContext)
-      throws InterruptedException {
-    when(mockWebClient.put(anyString())).thenReturn(mockHttpRequest);
-    when(mockWebClient.head(anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.authentication(any())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.send()).thenReturn(Future.failedFuture(
-        new Exception("Error creating database: unauthorized - Name or password is incorrect.")));
+  void testGetDatabase(Vertx vertx, VertxTestContext testContext) {
 
-    CouchdbClient unauthorizedClient = new CouchdbClientBuilder(vertx, mockWebClient)
-        .credentials(new UsernamePasswordCredentials("invalid_user", "invalid_password"))
-        .build();
-    CouchdbAdmin badadmin = CouchdbAdmin.get(unauthorizedClient);
-
-    badadmin.createDb("unauthorized_db", new DbCreateParams()).onComplete(ar -> {
-      if (ar.failed()) {
-        assertEquals("Error creating database: unauthorized - Name or password is incorrect.",
-            ar.cause().getMessage());
-        testContext.completeNow();
-      } else {
-        fail("Expected failure for unauthorized user but succeeded.");
-      }
-    });
-
-    testContext.awaitCompletion(5, TimeUnit.SECONDS);
   }
 
+  @Test
+  void testGetEtag(Vertx vertx, VertxTestContext testContext) {
+
+  }
+
+  @Test
+  void testGetJsonArray(Vertx vertx, VertxTestContext testContext) {
+
+  }
+
+  @Test
+  void testGetJsonObject(Vertx vertx, VertxTestContext testContext) {
+
+  }
+
+  @Test
+  void testNoBody(Vertx vertx, VertxTestContext testContext) {
+
+  }
+
+  @Test
+  void testPutJsonObject(Vertx vertx, VertxTestContext testContext) {
+
+  }
+
+  @Test
+  void testPutJsonObject2(Vertx vertx, VertxTestContext testContext) {
+
+  }
+
+  @Test
+  void testSession(Vertx vertx, VertxTestContext testContext) {
+
+  }
+
+  @Test
+  void testStatus(Vertx vertx, VertxTestContext testContext) {
+
+  }
+
+  @Test
+  void testUuids(Vertx vertx, VertxTestContext testContext) {
+
+  }
 }
