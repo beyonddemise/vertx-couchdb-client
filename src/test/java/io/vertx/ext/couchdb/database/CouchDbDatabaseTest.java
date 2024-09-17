@@ -11,12 +11,9 @@
  */
 package io.vertx.ext.couchdb.database;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -90,7 +87,8 @@ class CouchDbDatabaseTest {
     JsonObject resultDoc = new JsonObject().put("ok", true).put("id", "recipe_123");
 
     when(mockClient.doesExist(any())).thenReturn(Future.failedFuture("Document already exists"));
-    when(mockClient.putJsonObject(any(), any(), any())).thenReturn(Future.succeededFuture(resultDoc));
+    when(mockClient.putJsonObject(any(), any(), any()))
+        .thenReturn(Future.succeededFuture(resultDoc));
 
     database.createDocument("recipe_123", document)
         .onFailure(testContext::failNow)
@@ -110,7 +108,8 @@ class CouchDbDatabaseTest {
     JsonObject resultDoc = new JsonObject().put("ok", true).put("id", "recipe_123");
 
     when(mockClient.getEtag(any())).thenReturn(Future.succeededFuture("1-23456"));
-    when(mockClient.putJsonObject(any(), any(), any())).thenReturn(Future.succeededFuture(resultDoc));
+    when(mockClient.putJsonObject(any(), any(), any()))
+        .thenReturn(Future.succeededFuture(resultDoc));
 
     database.updateDocument("recipe_123", "1-23456", document)
         .onFailure(testContext::failNow)
