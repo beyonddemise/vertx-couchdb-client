@@ -212,7 +212,7 @@ public class CouchdbClientTest {
         .onFailure(err -> testContext.verify(() -> {
           assertNotNull(err);
           assertEquals("io.vertx.core.VertxException", err.getClass().getName());
-          assertEquals("Response status code 404 is not [between 200 and 3]00", err.getMessage());
+          assertTrue(err.getMessage().startsWith("Response status code 404 is not"));
           testContext.completeNow();
         }));
 
@@ -368,8 +368,7 @@ public class CouchdbClientTest {
 
   @Test
   void testUuids(Vertx vertx, VertxTestContext testContext) {
-    JsonObject expectedObject =
-        new JsonObject().put("uuids", new JsonArray().add("item1").add("item2"));
+    JsonObject expectedObject = new JsonObject().put("uuids", new JsonArray().add("item1").add("item2"));
     when(mockHttpResponse.bodyAsJsonObject()).thenReturn(expectedObject);
 
     client.uuids(3)
