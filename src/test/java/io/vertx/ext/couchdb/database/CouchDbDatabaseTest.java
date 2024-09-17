@@ -13,9 +13,12 @@ package io.vertx.ext.couchdb.database;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.CREATED;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.concurrent.TimeUnit;
@@ -30,9 +33,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.couchdb.CouchdbClient;
-import io.vertx.ext.couchdb.CouchdbClientBuilder;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
 import io.vertx.ext.couchdb.testannotations.UnitTest;
 import io.vertx.ext.web.client.HttpRequest;
@@ -47,12 +48,12 @@ class CouchDbDatabaseTest {
   private WebClient mockWebClient;
 
   @Mock
+  private CouchdbClient mockClient;
+  @Mock
   private HttpRequest<Buffer> mockHttpRequest;
 
   @Mock
   private HttpResponse<Buffer> mockHttpResponse;
-
-  private CouchdbClient client;
 
   private CouchDbDatabase database;
 
@@ -61,15 +62,16 @@ class CouchDbDatabaseTest {
   @BeforeEach
   void setUp(Vertx vertx, VertxTestContext testContext) {
     mockCloseable = MockitoAnnotations.openMocks(this);
-    client = new CouchdbClientBuilder(vertx, mockWebClient)
-        .credentials(new UsernamePasswordCredentials("admin", "password"))
-        .build();
-    CouchDbDatabase.create(client, "test_db")
+
+    when(mockClient.doesExist(any())).thenReturn(Future.succeededFuture());
+
+    CouchDbDatabase.create(mockClient, "test_db")
         .onFailure(testContext::failNow)
         .onSuccess(db -> {
           database = db;
           testContext.completeNow();
         });
+
   }
 
   @AfterEach
@@ -82,116 +84,116 @@ class CouchDbDatabaseTest {
   }
 
   @Test
-  void testCreateOrUpdateDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
-    when(mockWebClient.request(any(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.sendJson(any(JsonObject.class)))
-        .thenReturn(Future.succeededFuture(mockHttpResponse));
-    when(mockHttpResponse.statusCode()).thenReturn(CREATED.code());
-    when(mockHttpResponse.bodyAsJsonObject())
-        .thenReturn(new JsonObject().put("ok", true).put("id", "recipe_123"));
+  void testCreateDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
 
-    JsonObject document = new JsonObject()
-        .put("name", "Spaghetti with meatballs")
-        .put("ingredients", new JsonObject().put("pasta", "spaghetti"));
+    JsonObject document = new JsonObject();
+    JsonObject resultDoc = new JsonObject().put("ok", true).put("id", "recipe_123");
 
-    database.createDocument("recipe_123", document).onComplete(ar -> {
-      if (ar.succeeded()) {
-        JsonObject result = ar.result();
-        assertTrue(result.getBoolean("ok"));
-        assertEquals("recipe_123", result.getString("id"));
-        testContext.completeNow();
-      } else {
-        testContext.failNow(ar.cause());
-      }
-    });
+    when(mockClient.doesExist(any())).thenReturn(Future.failedFuture("Document already exists"));
+    when(mockClient.putJsonObject(any(), any(), any())).thenReturn(Future.succeededFuture(resultDoc));
+
+    database.createDocument("recipe_123", document)
+        .onFailure(testContext::failNow)
+        .onSuccess(result -> testContext.verify(() -> {
+          verify(mockClient, times(2)).doesExist(any());
+          assertTrue(result.getBoolean("ok"));
+          testContext.completeNow();
+        }));
 
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
   @Test
-  void testCreateOrUpdateDocumentError(VertxTestContext testContext) throws InterruptedException {
-    when(mockWebClient.request(any(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.sendJson(any(JsonObject.class)))
-        .thenReturn(Future.failedFuture(new Exception("Failed to create document")));
+  void testUpdateDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
 
-    JsonObject document = new JsonObject()
-        .put("name", "Spaghetti with meatballs")
-        .put("ingredients", new JsonObject().put("pasta", "spaghetti"));
+    JsonObject document = new JsonObject();
+    JsonObject resultDoc = new JsonObject().put("ok", true).put("id", "recipe_123");
 
-    database.createDocument("recipe_123", document).onComplete(ar -> {
-      if (ar.failed()) {
-        assertEquals("Failed to create document", ar.cause().getMessage());
-        testContext.completeNow();
-      } else {
-        testContext.failNow(new AssertionError("Expected to fail, but succeeded"));
-      }
-    });
+    when(mockClient.getEtag(any())).thenReturn(Future.succeededFuture("1-23456"));
+    when(mockClient.putJsonObject(any(), any(), any())).thenReturn(Future.succeededFuture(resultDoc));
+
+    database.updateDocument("recipe_123", "1-23456", document)
+        .onFailure(testContext::failNow)
+        .onSuccess(result -> testContext.verify(() -> {
+          verify(mockClient).doesExist(any());
+          assertTrue(result.getBoolean("ok"));
+          testContext.completeNow();
+        }));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void testCreateDocumentFailure(VertxTestContext testContext) throws InterruptedException {
+
+    JsonObject document = new JsonObject();
+
+    when(mockClient.doesExist(any())).thenReturn(Future.succeededFuture());
+
+    database.createDocument("recipe_123", document)
+        .onFailure(err -> testContext.verify(() -> {
+          assertNotNull(err);
+          verify(mockClient, times(2)).doesExist(any());
+          testContext.completeNow();
+        }))
+        .onSuccess(result -> testContext.failNow("That Test should not pass"));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void testUpdateDocumentfailure(VertxTestContext testContext) throws InterruptedException {
+
+    JsonObject document = new JsonObject();
+
+    when(mockClient.getEtag(any())).thenReturn(Future.succeededFuture("999996"));
+
+    database.updateDocument("recipe_123", "1-23456", document)
+        .onFailure(err -> testContext.verify(() -> {
+          assertNotNull(err);
+          testContext.completeNow();
+        }))
+        .onSuccess(result -> testContext.failNow("This call should fail"));
 
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
   @Test
   void testGetDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
-    when(mockWebClient.request(any(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
-    when(mockHttpResponse.statusCode()).thenReturn(OK.code());
-    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(new JsonObject()
+
+    when(mockClient.getJsonObject(any(), any())).thenReturn(Future.succeededFuture(new JsonObject()
         .put("_id", "recipe_123")
         .put("name", "Spaghetti with meatballs")
-        .put("ingredients", new JsonObject().put("pasta", "spaghetti")));
+        .put("ingredients", new JsonObject().put("pasta", "spaghetti"))));
 
     DocumentGetParams options = new DocumentGetParams().conflicts(false);
 
-    database.getDocument("recipe_123", options).onComplete(ar -> {
-      if (ar.succeeded()) {
-        JsonObject result = ar.result();
-        assertEquals("recipe_123", result.getString("_id"));
-        assertEquals("Spaghetti with meatballs", result.getString("name"));
-        testContext.completeNow();
-      } else {
-        testContext.failNow(ar.cause());
-      }
-    });
+    database.getDocument("recipe_123", options)
+        .onSuccess(result -> testContext.verify(() -> {
+          assertEquals("recipe_123", result.getString("_id"));
+          assertEquals("Spaghetti with meatballs", result.getString("name"));
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
 
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
   @Test
   void testGetDocumentNotFound(VertxTestContext testContext) throws InterruptedException {
-    when(mockWebClient.request(any(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.send())
+    when(mockClient.getJsonObject(any(), any()))
         .thenReturn(Future.failedFuture(new Exception("Document not found")));
 
     DocumentGetParams options = new DocumentGetParams().conflicts(false);
 
-    database.getDocument("non_existing_doc", options).onComplete(ar -> {
-      if (ar.failed()) {
-        assertEquals("Document not found", ar.cause().getMessage());
-        testContext.completeNow();
-      } else {
-        testContext.failNow(new AssertionError("Expected to fail, but succeeded"));
-      }
-    });
+    database.getDocument("non_existing_doc", options)
+        .onFailure(err -> testContext.verify(() -> {
+          assertEquals("Document not found", err.getMessage());
+          testContext.completeNow();
+        }))
+        .onSuccess(result -> testContext.failNow("Expected to fail, but succeeded"));
 
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
-  @Test
-  void testGetDocumentBadRequest(VertxTestContext testContext) throws InterruptedException {
-    when(mockWebClient.request(any(), anyString())).thenReturn(mockHttpRequest);
-    when(mockHttpRequest.send()).thenReturn(Future.failedFuture(new Exception("Bad request")));
-
-    DocumentGetParams options = new DocumentGetParams().conflicts(false);
-
-    database.getDocument("invalid_doc_id", options).onComplete(ar -> {
-      if (ar.failed()) {
-        assertEquals("Bad request", ar.cause().getMessage());
-        testContext.completeNow();
-      } else {
-        testContext.failNow(new AssertionError("Expected to fail, but succeeded"));
-      }
-    });
-
-    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
-  }
 }
