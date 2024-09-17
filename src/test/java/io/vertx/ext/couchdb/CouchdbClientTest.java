@@ -71,13 +71,17 @@ public class CouchdbClientTest {
     headers.add("Content-Type", "application/json");
 
     client = new CouchdbClientBuilder(vertx, mockWebClient).build();
-    lenient().when(mockWebClient.request(any(HttpMethod.class), any(Integer.class), any(), any(UriTemplate.class)))
+    lenient()
+        .when(mockWebClient.request(any(HttpMethod.class), any(Integer.class), any(),
+            any(UriTemplate.class)))
         .thenReturn(mockHttpRequest);
 
-    lenient().when(mockHttpRequest.authentication(any(Credentials.class))).thenReturn(mockHttpRequest);
+    lenient().when(mockHttpRequest.authentication(any(Credentials.class)))
+        .thenReturn(mockHttpRequest);
     lenient().when(mockHttpRequest.ssl(any())).thenReturn(mockHttpRequest);
     lenient().when(mockHttpRequest.setTemplateParam(any(), anyMap())).thenReturn(mockHttpRequest);
-    lenient().when(mockHttpRequest.sendJson(any())).thenReturn(Future.succeededFuture(mockHttpResponse));
+    lenient().when(mockHttpRequest.sendJson(any()))
+        .thenReturn(Future.succeededFuture(mockHttpResponse));
     lenient().when(mockHttpRequest.send()).thenReturn(Future.succeededFuture(mockHttpResponse));
 
     lenient().when(mockHttpResponse.statusCode()).thenReturn(200);
@@ -189,7 +193,8 @@ public class CouchdbClientTest {
           testContext.verify(() -> {
             assertNotNull(database);
             assertEquals(dbName, database.name());
-            verify(mockWebClient).request(eq(HttpMethod.HEAD), anyInt(), anyString(), any(UriTemplate.class));
+            verify(mockWebClient).request(eq(HttpMethod.HEAD), anyInt(), anyString(),
+                any(UriTemplate.class));
             verify(mockHttpRequest).send();
             testContext.completeNow();
           });
@@ -207,7 +212,7 @@ public class CouchdbClientTest {
         .onFailure(err -> testContext.verify(() -> {
           assertNotNull(err);
           assertEquals("io.vertx.core.VertxException", err.getClass().getName());
-          assertEquals("Response status code 404 is not equal to 200", err.getMessage());
+          assertEquals("Response status code 404 is not [between 200 and 3]00", err.getMessage());
           testContext.completeNow();
         }));
 
@@ -331,7 +336,8 @@ public class CouchdbClientTest {
           testContext.verify(() -> {
             assertNotNull(result);
             assertEquals(expectedObject, result);
-            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(), any(UriTemplate.class));
+            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(),
+                any(UriTemplate.class));
             verify(mockHttpRequest).send();
             testContext.completeNow();
           });
@@ -350,7 +356,8 @@ public class CouchdbClientTest {
           testContext.verify(() -> {
             assertNotNull(result);
             assertEquals(expectedObject, result);
-            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(), any(UriTemplate.class));
+            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(),
+                any(UriTemplate.class));
             verify(mockHttpRequest).send();
             testContext.completeNow();
           });
@@ -361,7 +368,8 @@ public class CouchdbClientTest {
 
   @Test
   void testUuids(Vertx vertx, VertxTestContext testContext) {
-    JsonObject expectedObject = new JsonObject().put("uuids", new JsonArray().add("item1").add("item2"));
+    JsonObject expectedObject =
+        new JsonObject().put("uuids", new JsonArray().add("item1").add("item2"));
     when(mockHttpResponse.bodyAsJsonObject()).thenReturn(expectedObject);
 
     client.uuids(3)
@@ -369,7 +377,8 @@ public class CouchdbClientTest {
           testContext.verify(() -> {
             assertNotNull(result);
             assertEquals(expectedObject, result);
-            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(), any(UriTemplate.class));
+            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(),
+                any(UriTemplate.class));
             verify(mockHttpRequest).send();
             testContext.completeNow();
           });

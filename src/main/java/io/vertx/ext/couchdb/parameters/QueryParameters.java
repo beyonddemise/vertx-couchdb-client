@@ -26,9 +26,9 @@ public interface QueryParameters {
   /**
    * Adds a parameter
    *
-   * @param paramName  String
+   * @param paramName String
    * @param paramValue Any
-   * @param force      add even if paramName is not known
+   * @param force add even if paramName is not known
    */
   void addParameter(String paramName, Object paramValue, boolean force);
 

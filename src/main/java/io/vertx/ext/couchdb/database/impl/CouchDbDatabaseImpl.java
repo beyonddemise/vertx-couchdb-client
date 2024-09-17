@@ -34,7 +34,7 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
   /**
    * Create does create the JavaObject, not the couchDB
    *
-   * @param client       CouchDBClient
+   * @param client CouchDBClient
    * @param databaseName String
    * @return Future of CouchDbDatabase
    */
@@ -132,7 +132,8 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
     if (rev != null) {
       params.addParameter("rev", rev, true);
     }
-    UriTemplate urlToCheck = PathParameterTemplates.attachment(this.databaseName, docId, attachementName);
+    UriTemplate urlToCheck =
+        PathParameterTemplates.attachment(this.databaseName, docId, attachementName);
 
     this.client.noBody(HttpMethod.GET, urlToCheck, params)
         .onSuccess(response -> promise.succeed(response.body()))

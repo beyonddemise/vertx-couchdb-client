@@ -12,6 +12,7 @@ package io.vertx.ext.couchdb.admin;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.admin.impl.CouchdbAdminImpl;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
@@ -74,13 +75,21 @@ public interface CouchdbAdmin {
    * Creates a new database in CouchDB with the specified name and options.
    *
    * @param databaseName The name of the database, must follow specific naming
-   *                     rules.
-   * @param options      JsonObject containing optional parameters for creating
-   *                     the database.
+   *        rules.
+   * @param options JsonObject containing optional parameters for creating
+   *        the database.
    * @return Future with the result of the create operation, containing the
    *         response from CouchDB.
    */
   Future<CouchDbDatabase> createDb(String databaseName, DbCreateParams options);
+
+  /**
+   * Checks if the system databases exist, creates them if needed
+   *
+   * @return Future with the result of the check operation, containing the
+   *         response from CouchDB.
+   */
+  Future<JsonObject> checkOrCreateSystemDatabases();
 
   // TODO: implement more
 
