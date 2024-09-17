@@ -29,7 +29,6 @@ import io.vertx.ext.couchdb.exception.CouchdbException;
 import io.vertx.ext.couchdb.parameters.BaseQueryParameters;
 import io.vertx.ext.couchdb.parameters.PathParameterTemplates;
 import io.vertx.ext.couchdb.parameters.QueryParameters;
-import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.uritemplate.UriTemplate;
@@ -74,7 +73,7 @@ public class CouchdbClientImpl implements CouchdbClient {
   @Override
   public Future<CouchdbAdmin> getAdmin() {
     Promise<CouchdbAdmin> promise = vertx.promise();
-    this.status()
+    this.session()
         .onFailure(promise::fail)
         .onSuccess(json -> {
           JsonArray roles = json.getJsonObject("userCtx", new JsonObject())
@@ -85,34 +84,6 @@ public class CouchdbClientImpl implements CouchdbClient {
             promise.fail(new CouchdbException("You are not Admin"));
           }
         });
-
-    return promise.future();
-  }
-
-  @Override
-  @Deprecated
-  public Future<Buffer> rawCall(JsonObject params) {
-    Promise<Buffer> promise = vertx.promise();
-
-    String methodString = params.getString("method", "GET");
-    String path = params.getString("path", "/");
-    HttpMethod method = HttpMethod.valueOf(methodString.toUpperCase());
-    HttpRequest<Buffer> request = client.request(method, path);
-
-    if (credentials != null) {
-      request.authentication(credentials);
-    }
-
-    if (params.containsKey("body")) {
-      JsonObject body = params.getJsonObject("body");
-      request.sendJson(body)
-          .onFailure(promise::fail)
-          .onSuccess(response -> promise.complete(response.body()));
-    } else {
-      request.send()
-          .onFailure(promise::fail)
-          .onSuccess(response -> promise.complete(response.body()));
-    }
 
     return promise.future();
   }
@@ -173,7 +144,8 @@ public class CouchdbClientImpl implements CouchdbClient {
   }
 
   @Override
-  public Future<JsonObject> putJsonObject(UriTemplate baseUrl, QueryParameters params, JsonObject body) {
+  public Future<JsonObject> putJsonObject(UriTemplate baseUrl, QueryParameters params,
+      JsonObject body) {
 
     return this.jsonBody(HttpMethod.PUT, baseUrl, params, body);
   }
@@ -209,7 +181,8 @@ public class CouchdbClientImpl implements CouchdbClient {
   }
 
   @Override
-  public Future<HttpResponse<Buffer>> noBody(HttpMethod method, UriTemplate baseUrl, QueryParameters params) {
+  public Future<HttpResponse<Buffer>> noBody(HttpMethod method, UriTemplate baseUrl,
+      QueryParameters params) {
 
     QueryParameters actualParams = params == null ? new BaseQueryParameters() : params;
 
@@ -218,17 +191,17 @@ public class CouchdbClientImpl implements CouchdbClient {
         .authentication(this.credentials)
         .ssl(this.https)
         .send()
-        .expecting(HttpResponseExpectation.SC_OK);
+        .expecting(HttpResponseExpectation.SC_SUCCESS);
   }
 
   /**
    * Performs a HttpRequest request using the provided UriTemplate and
    * QueryParameters.
    *
-   * @param method  The HttpMethod to be used for the request.
+   * @param method The HttpMethod to be used for the request.
    * @param baseUrl The UriTemplate representing the base URL for the request.
-   * @param params  The QueryParameters to be applied to the request.
-   * @param body    The JsonObject body to be sent in the request.
+   * @param params The QueryParameters to be applied to the request.
+   * @param body The JsonObject body to be sent in the request.
    * @return A Future containing the HttpResponse with a Buffer body.
    */
   Future<JsonObject> jsonBody(HttpMethod method, UriTemplate baseUrl,
@@ -242,7 +215,7 @@ public class CouchdbClientImpl implements CouchdbClient {
         .authentication(this.credentials)
         .ssl(this.https)
         .sendJson(body)
-        .expecting(HttpResponseExpectation.SC_OK)
+        .expecting(HttpResponseExpectation.SC_SUCCESS)
         .expecting(HttpResponseExpectation.JSON)
         .onFailure(promise::fail)
         .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
@@ -259,6 +232,11 @@ public class CouchdbClientImpl implements CouchdbClient {
         .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
 
     return promise.future();
+  }
+
+  @Override
+  public void close() {
+    this.client.close();
   }
 
 }

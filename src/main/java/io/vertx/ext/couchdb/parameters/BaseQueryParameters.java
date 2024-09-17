@@ -78,7 +78,6 @@ public class BaseQueryParameters implements QueryParameters, JsonObjectSerializa
 
   /**
    * Converts an object to its string representation.
-   * 
    * <p>
    * This method handles different types of objects:
    * <ul>

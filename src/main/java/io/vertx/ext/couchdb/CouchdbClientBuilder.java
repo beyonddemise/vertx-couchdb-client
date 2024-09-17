@@ -51,7 +51,7 @@ public class CouchdbClientBuilder {
   /**
    * Constructor for CouchdbClientBuilder.
    *
-   * @param vertx  The Vertx instance to use for the client.
+   * @param vertx The Vertx instance to use for the client.
    * @param client The WebClient instance to use for the client.
    */
   public CouchdbClientBuilder(Vertx vertx, WebClient client) {
