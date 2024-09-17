@@ -368,7 +368,8 @@ public class CouchdbClientTest {
 
   @Test
   void testUuids(Vertx vertx, VertxTestContext testContext) {
-    JsonObject expectedObject = new JsonObject().put("uuids", new JsonArray().add("item1").add("item2"));
+    JsonObject expectedObject =
+        new JsonObject().put("uuids", new JsonArray().add("item1").add("item2"));
     when(mockHttpResponse.bodyAsJsonObject()).thenReturn(expectedObject);
 
     client.uuids(3)
