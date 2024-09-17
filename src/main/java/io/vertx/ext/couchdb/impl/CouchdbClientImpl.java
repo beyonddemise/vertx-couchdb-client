@@ -80,7 +80,7 @@ public class CouchdbClientImpl implements CouchdbClient {
           JsonArray roles = json.getJsonObject("userCtx", new JsonObject())
               .getJsonArray("roles", new JsonArray());
           if (roles.contains("_admin")) {
-            promise.complete(null);
+            promise.complete(CouchdbAdmin.create(this));
           } else {
             promise.fail(new CouchdbException("You are not Admin"));
           }

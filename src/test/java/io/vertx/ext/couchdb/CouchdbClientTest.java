@@ -10,7 +10,9 @@
  */
 package io.vertx.ext.couchdb;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -31,8 +33,10 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.Credentials;
+import io.vertx.ext.couchdb.admin.CouchdbAdmin;
 import io.vertx.ext.couchdb.parameters.BaseQueryParameters;
 import io.vertx.ext.couchdb.parameters.QueryParameters;
 import io.vertx.ext.couchdb.testannotations.UnitTest;
@@ -109,6 +113,23 @@ public class CouchdbClientTest {
   }
 
   @Test
+  void testDeleteJsonObjectFail(Vertx vertx, VertxTestContext testContext) {
+    when(mockHttpRequest.send()).thenReturn(Future.failedFuture(new RuntimeException("Failed to send request")));
+    UriTemplate template = UriTemplate.of("/db/doc");
+    QueryParameters params = new BaseQueryParameters();
+    params.addParameter("rev", "1-xxx", true);
+    client.deleteJsonObject(template, params)
+        .onSuccess(json -> testContext.failNow("This call should have failed"))
+        .onFailure(err -> testContext.verify(() -> {
+          assertNotNull(err);
+          assertEquals("java.lang.RuntimeException", err.getClass().getName());
+          assertEquals("Failed to send request", err.getMessage());
+          testContext.completeNow();
+        }));
+
+  }
+
+  @Test
   void testDoesExist(Vertx vertx, VertxTestContext testContext) {
     UriTemplate template = UriTemplate.of("/db/doc");
 
@@ -125,57 +146,235 @@ public class CouchdbClientTest {
   }
 
   @Test
+  void testDoesExistFail(Vertx vertx, VertxTestContext testContext) {
+    when(mockHttpResponse.statusCode()).thenReturn(404);
+    UriTemplate template = UriTemplate.of("/db/doc");
+
+    client.doesExist(template)
+        .onSuccess(result -> testContext.failNow("This call should have failed"))
+        .onFailure(err -> testContext.verify(() -> {
+          assertNotNull(err);
+          assertEquals("io.vertx.core.VertxException", err.getClass().getName());
+          testContext.completeNow();
+        }));
+  }
+
+  @Test
   void testGetAdmin(Vertx vertx, VertxTestContext testContext) {
+    JsonObject session = new JsonObject()
+        .put("ok", true)
+        .put("userCtx", new JsonObject()
+            .put("name", "admin")
+            .put("roles", new JsonArray().add("_admin")));
+
+    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(session);
+    client.getAdmin()
+        .onSuccess(result -> {
+          testContext.verify(() -> {
+            assertNotNull(result);
+            assertTrue(result instanceof CouchdbAdmin);
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
 
   }
 
   @Test
   void testGetDatabase(Vertx vertx, VertxTestContext testContext) {
+    String dbName = "testdb";
+
+    client.getDatabase(dbName)
+        .onSuccess(database -> {
+          testContext.verify(() -> {
+            assertNotNull(database);
+            assertEquals(dbName, database.name());
+            verify(mockWebClient).request(eq(HttpMethod.HEAD), anyInt(), anyString(), any(UriTemplate.class));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
+
+  }
+
+  @Test
+  void testGetDatabaseFail(Vertx vertx, VertxTestContext testContext) {
+    String dbName = "testdb";
+    when(mockHttpResponse.statusCode()).thenReturn(404);
+    client.getDatabase(dbName)
+        .onSuccess(database -> testContext.failNow("This call should have failed"))
+        .onFailure(err -> testContext.verify(() -> {
+          assertNotNull(err);
+          assertEquals("io.vertx.core.VertxException", err.getClass().getName());
+          assertEquals("Response status code 404 is not equal to 200", err.getMessage());
+          testContext.completeNow();
+        }));
 
   }
 
   @Test
   void testGetEtag(Vertx vertx, VertxTestContext testContext) {
-
+    when(mockHttpResponse.getHeader("ETag")).thenReturn("123456");
+    UriTemplate template = UriTemplate.of("/db/doc");
+    client.getEtag(template)
+        .onSuccess(etag -> {
+          testContext.verify(() -> {
+            assertNotNull(etag);
+            verify(mockWebClient).request(eq(HttpMethod.HEAD), anyInt(), anyString(), eq(template));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
   }
 
   @Test
   void testGetJsonArray(Vertx vertx, VertxTestContext testContext) {
+    JsonArray expectedArray = new JsonArray().add("item1").add("item2");
+    when(mockHttpResponse.bodyAsJsonArray()).thenReturn(expectedArray);
+    UriTemplate template = UriTemplate.of("/test/array");
+
+    client.getJsonArray(template, null)
+        .onSuccess(result -> {
+          testContext.verify(() -> {
+            assertNotNull(result);
+            assertEquals(expectedArray, result);
+            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(), eq(template));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
 
   }
 
   @Test
   void testGetJsonObject(Vertx vertx, VertxTestContext testContext) {
+    JsonObject expectedObject = new JsonObject().put("key", "value");
+    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(expectedObject);
+    UriTemplate template = UriTemplate.of("/test/object");
+
+    client.getJsonObject(template, null)
+        .onSuccess(result -> {
+          testContext.verify(() -> {
+            assertNotNull(result);
+            assertEquals(expectedObject, result);
+            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(), eq(template));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
 
   }
 
   @Test
   void testNoBody(Vertx vertx, VertxTestContext testContext) {
+    UriTemplate template = UriTemplate.of("/test/no-body");
+
+    client.noBody(HttpMethod.GET, template, null)
+        .onSuccess(response -> {
+          testContext.verify(() -> {
+            assertNotNull(response);
+            assertEquals(200, response.statusCode());
+            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(), eq(template));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
 
   }
 
   @Test
   void testPutJsonObject(Vertx vertx, VertxTestContext testContext) {
+    JsonObject expectedObject = new JsonObject().put("key", "value");
+    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(expectedObject);
+    UriTemplate template = UriTemplate.of("/test/put-object");
+
+    client.putJsonObject(template, null)
+        .onSuccess(result -> {
+          testContext.verify(() -> {
+            assertNotNull(result);
+            assertEquals(expectedObject, result);
+            verify(mockWebClient).request(eq(HttpMethod.PUT), anyInt(), anyString(), eq(template));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
 
   }
 
   @Test
-  void testPutJsonObject2(Vertx vertx, VertxTestContext testContext) {
+  void testPutJsonObjectFail(Vertx vertx, VertxTestContext testContext) {
+    when(mockHttpResponse.statusCode()).thenReturn(404);
+    UriTemplate template = UriTemplate.of("/test/put-object");
 
+    client.putJsonObject(template, null)
+        .onSuccess(result -> testContext.failNow("This call should have failed"))
+        .onFailure(err -> testContext.verify(() -> {
+          assertNotNull(err);
+          assertEquals("io.vertx.core.VertxException", err.getClass().getName());
+          testContext.completeNow();
+        }));
   }
 
   @Test
   void testSession(Vertx vertx, VertxTestContext testContext) {
+    JsonObject expectedObject = new JsonObject().put("key", "value");
+    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(expectedObject);
+
+    client.session()
+        .onSuccess(result -> {
+          testContext.verify(() -> {
+            assertNotNull(result);
+            assertEquals(expectedObject, result);
+            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(), any(UriTemplate.class));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
 
   }
 
   @Test
   void testStatus(Vertx vertx, VertxTestContext testContext) {
+    JsonObject expectedObject = new JsonObject().put("key", "value");
+    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(expectedObject);
+
+    client.status()
+        .onSuccess(result -> {
+          testContext.verify(() -> {
+            assertNotNull(result);
+            assertEquals(expectedObject, result);
+            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(), any(UriTemplate.class));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
 
   }
 
   @Test
   void testUuids(Vertx vertx, VertxTestContext testContext) {
+    JsonObject expectedObject = new JsonObject().put("uuids", new JsonArray().add("item1").add("item2"));
+    when(mockHttpResponse.bodyAsJsonObject()).thenReturn(expectedObject);
+
+    client.uuids(3)
+        .onSuccess(result -> {
+          testContext.verify(() -> {
+            assertNotNull(result);
+            assertEquals(expectedObject, result);
+            verify(mockWebClient).request(eq(HttpMethod.GET), anyInt(), anyString(), any(UriTemplate.class));
+            verify(mockHttpRequest).send();
+            testContext.completeNow();
+          });
+        })
+        .onFailure(testContext::failNow);
 
   }
 }
