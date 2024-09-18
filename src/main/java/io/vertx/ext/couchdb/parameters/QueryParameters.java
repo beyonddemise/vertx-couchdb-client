@@ -11,6 +11,7 @@
 package io.vertx.ext.couchdb.parameters;
 
 import java.util.List;
+import java.util.Map;
 
 public interface QueryParameters {
 
@@ -25,12 +26,11 @@ public interface QueryParameters {
   /**
    * Adds a parameter
    *
-   * @param paramName String
+   * @param paramName  String
    * @param paramValue Any
-   * @param force add even if paramName is not known
+   * @param force      add even if paramName is not known
    */
   void addParameter(String paramName, Object paramValue, boolean force);
-
 
   /*
    * like addParameter, but only known parameters
@@ -49,5 +49,12 @@ public interface QueryParameters {
    * @return complete URL
    */
   String appendParamsToUrl(final String sourceUrl);
+
+  /**
+   * Returns a map of parameters for URIemplate
+   *
+   * @return Map<String, String>
+   */
+  Map<String, String> forTemplate();
 
 }

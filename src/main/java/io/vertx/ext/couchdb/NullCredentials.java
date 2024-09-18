@@ -14,7 +14,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.Credentials;
 
 /**
- * NullCredentials save us all code to check for credentials ar not
+ * NullCredentials save us all code to check for null checking credentials
  */
 public class NullCredentials implements Credentials {
 

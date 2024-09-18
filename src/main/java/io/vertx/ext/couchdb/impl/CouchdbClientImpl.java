@@ -17,69 +17,59 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.couchdb.CouchdbClient;
-import io.vertx.ext.couchdb.NullCredentials;
 import io.vertx.ext.couchdb.admin.CouchdbAdmin;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
 import io.vertx.ext.couchdb.exception.CouchdbException;
 import io.vertx.ext.couchdb.parameters.BaseQueryParameters;
+import io.vertx.ext.couchdb.parameters.PathParameterTemplates;
+import io.vertx.ext.couchdb.parameters.QueryParameters;
 import io.vertx.ext.web.client.HttpRequest;
+import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.uritemplate.UriTemplate;
 
 public class CouchdbClientImpl implements CouchdbClient {
 
   private final VertxInternal vertx;
   private final WebClient client;
   private final Credentials credentials;
+  private final String host;
+  private final int port;
+  private final boolean https;
 
-  CouchdbClientImpl(Vertx vertx, WebClient client, Credentials credentials) {
+  public CouchdbClientImpl(final Vertx vertx, final WebClient client,
+      final String host, final int port, final boolean https, final Credentials credentials) {
     Objects.requireNonNull(vertx);
     Objects.requireNonNull(client);
+    Objects.requireNonNull(host);
+    Objects.requireNonNull(port);
+    Objects.requireNonNull(https);
     Objects.requireNonNull(credentials);
+
     this.vertx = (VertxInternal) vertx;
     this.client = client;
     this.credentials = credentials;
-  }
-
-  public static CouchdbClient create(final Vertx vertx, final WebClient client) {
-    return create(vertx, client, new NullCredentials());
-  }
-
-  public static CouchdbClient create(final Vertx vertx, final WebClient client,
-      final Credentials credentials) {
-    return new CouchdbClientImpl(vertx, client, credentials);
+    this.host = host;
+    this.port = port;
+    this.https = https;
   }
 
   @Override
   public Future<JsonObject> status() {
-    return this.getJsonObject(this.client, "/", null);
-  }
-
-  @Override
-  public WebClient getWebClient() {
-    return this.client;
+    return this.getJsonObject(UriTemplate.of("/"), null);
   }
 
   @Override
   public Future<JsonObject> session() {
-    String baseUrl = "/_session";
-    return this.getJsonObject(this.client, baseUrl, null);
+    UriTemplate baseUrl = UriTemplate.of("/_session");
+    return this.getJsonObject(baseUrl, null);
   }
-
-  @Override
-  public VertxInternal getVertx() {
-    return this.vertx;
-  }
-
-  @Override
-  public Credentials getCredentials() {
-    return this.credentials;
-  }
-
 
   @Override
   public Future<CouchdbAdmin> getAdmin() {
@@ -100,6 +90,7 @@ public class CouchdbClientImpl implements CouchdbClient {
   }
 
   @Override
+  @Deprecated
   public Future<Buffer> rawCall(JsonObject params) {
     Promise<Buffer> promise = vertx.promise();
 
@@ -128,12 +119,12 @@ public class CouchdbClientImpl implements CouchdbClient {
 
   @Override
   public Future<JsonObject> uuids(int count) {
-    String baseUrl = "/_uuids";
+    UriTemplate baseUrl = UriTemplate.of("/_uuids" + PathParameterTemplates.QUERY);
     BaseQueryParameters param = new BaseQueryParameters();
     if (count > 0) {
       param.addParameter("count", count, true);
     }
-    return this.getJsonObject(client, baseUrl, param);
+    return this.getJsonObject(baseUrl, param);
 
   }
 
@@ -142,5 +133,132 @@ public class CouchdbClientImpl implements CouchdbClient {
     return CouchDbDatabase.create(this, databaseName);
   }
 
+  @Override
+  public Future<JsonArray> getJsonArray(UriTemplate baseUrl, QueryParameters params) {
+
+    Promise<JsonArray> promise = this.vertx.promise();
+    this.noBody(HttpMethod.GET, baseUrl, params)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonArray()));
+
+    return promise.future();
+
+  }
+
+  @Override
+  public Future<JsonObject> getJsonObject(UriTemplate baseUrl, QueryParameters params) {
+
+    Promise<JsonObject> promise = this.vertx.promise();
+
+    this.noBody(HttpMethod.GET, baseUrl, params)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
+
+    return promise.future();
+
+  }
+
+  @Override
+  public Future<JsonObject> putJsonObject(UriTemplate baseUrl, QueryParameters params) {
+
+    Promise<JsonObject> promise = this.vertx.promise();
+    this.noBody(HttpMethod.PUT, baseUrl, params)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
+    return promise.future();
+
+  }
+
+  @Override
+  public Future<JsonObject> putJsonObject(UriTemplate baseUrl, QueryParameters params, JsonObject body) {
+
+    return this.jsonBody(HttpMethod.PUT, baseUrl, params, body);
+  }
+
+  @Override
+  public Future<Void> doesExist(UriTemplate urlToCheck) {
+
+    Promise<Void> promise = Promise.promise();
+    this.noBody(HttpMethod.HEAD, urlToCheck, null)
+        .onSuccess(v -> promise.succeed())
+        .onFailure(promise::fail);
+
+    return promise.future();
+  }
+
+  @Override
+  public Future<String> getEtag(UriTemplate urlToCheck) {
+
+    Promise<String> promise = Promise.promise();
+
+    noBody(HttpMethod.HEAD, urlToCheck, null)
+        .onSuccess(response -> {
+          String etag = response.getHeader("ETag");
+          if (etag != null) {
+            promise.succeed(etag);
+          } else {
+            promise.fail(new CouchdbException("ETag header not found in response"));
+          }
+        })
+        .onFailure(promise::fail);
+
+    return promise.future();
+  }
+
+  @Override
+  public Future<HttpResponse<Buffer>> noBody(HttpMethod method, UriTemplate baseUrl, QueryParameters params) {
+
+    QueryParameters actualParams = params == null ? new BaseQueryParameters() : params;
+
+    return client.request(method, this.port, this.host, baseUrl)
+        .setTemplateParam("query", actualParams.forTemplate())
+        .authentication(this.credentials)
+        .ssl(this.https)
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK);
+  }
+
+  /**
+   * Performs a HttpRequest request using the provided UriTemplate and
+   * QueryParameters.
+   *
+   * @param method  The HttpMethod to be used for the request.
+   * @param baseUrl The UriTemplate representing the base URL for the request.
+   * @param params  The QueryParameters to be applied to the request.
+   * @param body    The JsonObject body to be sent in the request.
+   * @return A Future containing the HttpResponse with a Buffer body.
+   */
+  Future<JsonObject> jsonBody(HttpMethod method, UriTemplate baseUrl,
+      QueryParameters params, JsonObject body) {
+
+    Promise<JsonObject> promise = this.vertx.promise();
+    QueryParameters actualParams = params == null ? new BaseQueryParameters() : params;
+
+    client.request(method, this.port, this.host, baseUrl)
+        .setTemplateParam("query", actualParams.forTemplate())
+        .authentication(this.credentials)
+        .ssl(this.https)
+        .sendJson(body)
+        .expecting(HttpResponseExpectation.SC_OK)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
+
+    return promise.future();
+  }
+
+  @Override
+  public Future<JsonObject> deleteJsonObject(UriTemplate baseUrl, QueryParameters params) {
+    Promise<JsonObject> promise = this.vertx.promise();
+    this.noBody(HttpMethod.DELETE, baseUrl, params)
+        .expecting(HttpResponseExpectation.JSON)
+        .onFailure(promise::fail)
+        .onSuccess(response -> promise.complete(response.bodyAsJsonObject()));
+
+    return promise.future();
+  }
 
 }

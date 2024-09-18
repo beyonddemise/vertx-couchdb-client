@@ -61,8 +61,9 @@ public class CouchdbClientIT {
         .setDefaultHost(couchdbContainer.getHost())
         .setDefaultPort(couchdbContainer.getMappedPort(COUCHDB_PORT)));
 
-    client = CouchdbClient.create(vertx, webClient,
-        new UsernamePasswordCredentials("admin", "password"));
+    client = new CouchdbClientBuilder(vertx, webClient)
+        .credentials(new UsernamePasswordCredentials("admin", "password"))
+        .build();
 
     admin = CouchdbAdmin.get(client);
 
@@ -128,12 +129,11 @@ public class CouchdbClientIT {
   @Test
   void testCreateDbUnauthorized(Vertx vertx, VertxTestContext testContext)
       throws InterruptedException {
-    WebClient webClient = WebClient.create(vertx, new WebClientOptions()
-        .setDefaultHost(couchdbContainer.getHost())
-        .setDefaultPort(couchdbContainer.getMappedPort(COUCHDB_PORT)));
+    WebClient webClient = WebClient.create(vertx);
 
-    CouchdbClient unauthorizedClient = CouchdbClient.create(vertx, webClient,
-        new UsernamePasswordCredentials("invalid_user", "invalid_password"));
+    CouchdbClient unauthorizedClient = new CouchdbClientBuilder(vertx, webClient)
+        .credentials(new UsernamePasswordCredentials("invalid_user", "invalid_password"))
+        .build();
 
     CouchdbAdmin badAdmin = CouchdbAdmin.get(unauthorizedClient);
 
