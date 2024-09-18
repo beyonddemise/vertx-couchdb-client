@@ -8,10 +8,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.ext.couchdb.exception;
+package io.vertx.ext.couchdb.utils;
 
-public class CouchdbException extends Exception {
-  public CouchdbException(String message) {
-    super(message);
-  }
+import io.vertx.core.json.JsonObject;
+
+public interface JsonObjectSerializable {
+
+  JsonObject toJson();
+
 }

@@ -8,10 +8,19 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.ext.couchdb.exception;
+package io.vertx.ext.couchdb;
 
-public class CouchdbException extends Exception {
-  public CouchdbException(String message) {
-    super(message);
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.authentication.Credentials;
+
+/**
+ * NullCredentials save us all code to check for credentials ar not
+ */
+public class NullCredentials implements Credentials {
+
+  @Override
+  public JsonObject toJson() {
+    return new JsonObject();
   }
+
 }
