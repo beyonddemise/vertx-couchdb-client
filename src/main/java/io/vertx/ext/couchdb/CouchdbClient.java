@@ -61,22 +61,10 @@ public interface CouchdbClient {
   Future<JsonObject> uuids(int count);
 
   /**
-   * Makes a call to the CouchDB server with the given parameters.
-   *
-   * @param params JsonObject with the headers, path, method, parameters, and
-   *               payload (if any).
-   * @return Future with the result of the call, fails with
-   *         {@link CouchdbException} if the
-   *         operation fails.
-   */
-  @Deprecated
-  Future<Buffer> rawCall(JsonObject params);
-
-  /**
    * Retrieves a specified database.
    *
    * @param databaseName The name of the database, must follow specific naming
-   *                     rules.
+   *        rules.
    * @return Future with a CouchDbDatabase instance
    */
   Future<CouchDbDatabase> getDatabase(String databaseName);
@@ -90,7 +78,7 @@ public interface CouchdbClient {
    * Performs a GET request and returns the result as a JsonArray.
    *
    * @param baseUrl The base URL for the request.
-   * @param params  The query parameters to append to the URL, or null if none.
+   * @param params The query parameters to append to the URL, or null if none.
    * @return A Future with the JsonArray result of the GET request.
    */
   Future<JsonArray> getJsonArray(UriTemplate baseUrl, QueryParameters params);
@@ -99,7 +87,7 @@ public interface CouchdbClient {
    * Performs a GET request and returns the result as a JsonObject.
    *
    * @param baseUrl The base URL for the request.
-   * @param params  The query parameters to append to the URL, or null if none.
+   * @param params The query parameters to append to the URL, or null if none.
    * @return A Future with the JsonObject result of the GET request.
    */
   Future<JsonObject> getJsonObject(UriTemplate baseUrl, QueryParameters params);
@@ -108,7 +96,7 @@ public interface CouchdbClient {
    * Performs a PUT request without a body and returns the result as a JsonObject.
    *
    * @param baseUrl The base URL for the request.
-   * @param params  The query parameters to append to the URL, or null if none.
+   * @param params The query parameters to append to the URL, or null if none.
    * @return A Future with the JsonObject result of the PUT request.
    */
   Future<JsonObject> putJsonObject(UriTemplate baseUrl, QueryParameters params);
@@ -117,8 +105,8 @@ public interface CouchdbClient {
    * Performs a PUT request with a body and returns the result as a JsonObject.
    *
    * @param baseUrl The base URL for the request.
-   * @param params  The query parameters to append to the URL, or null if none.
-   * @param body    The JSON body to send in the PUT request.
+   * @param params The query parameters to append to the URL, or null if none.
+   * @param body The JSON body to send in the PUT request.
    * @return A Future with the JsonObject result of the PUT request.
    */
   Future<JsonObject> putJsonObject(UriTemplate baseUrl, QueryParameters params, JsonObject body);
@@ -127,7 +115,7 @@ public interface CouchdbClient {
    * Performs a DELETE request and returns the result as a JsonObject.
    *
    * @param baseUrl The base URL for the request.
-   * @param params  The query parameters to append to the URL, or null if none.
+   * @param params The query parameters to append to the URL, or null if none.
    * @return A Future with the JsonObject result of the PUT request.
    */
   Future<JsonObject> deleteJsonObject(UriTemplate baseUrl, QueryParameters params);
@@ -152,10 +140,16 @@ public interface CouchdbClient {
    * Performs a HttpRequest request using the provided UriTemplate and
    * QueryParameters.
    *
-   * @param method  The HttpMethod to be used for the request.
+   * @param method The HttpMethod to be used for the request.
    * @param baseUrl The UriTemplate representing the base URL for the request.
-   * @param params  The QueryParameters to be applied to the request.
+   * @param params The QueryParameters to be applied to the request.
    * @return A Future containing the HttpResponse with a Buffer body.
    */
-  Future<HttpResponse<Buffer>> noBody(HttpMethod method, UriTemplate baseUrl, QueryParameters params);
+  Future<HttpResponse<Buffer>> noBody(HttpMethod method, UriTemplate baseUrl,
+      QueryParameters params);
+
+  /**
+   * Closes the client and releases all associated resources.
+   */
+  void close();
 }

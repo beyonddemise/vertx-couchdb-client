@@ -51,7 +51,7 @@ public class CouchdbClientBuilder {
   /**
    * Constructor for CouchdbClientBuilder.
    *
-   * @param vertx  The Vertx instance to use for the client.
+   * @param vertx The Vertx instance to use for the client.
    * @param client The WebClient instance to use for the client.
    */
   public CouchdbClientBuilder(Vertx vertx, WebClient client) {
@@ -98,7 +98,7 @@ public class CouchdbClientBuilder {
    * @param https The boolean value to use for the client.
    * @return The CouchdbClientBuilder instance.
    */
-  public CouchdbClientBuilder setHttps(boolean https) {
+  public CouchdbClientBuilder https(boolean https) {
     this.https = https;
     return this;
   }

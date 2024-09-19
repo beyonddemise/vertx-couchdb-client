@@ -12,6 +12,7 @@ package io.vertx.ext.couchdb.admin;
 
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.admin.impl.CouchdbAdminImpl;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
@@ -24,7 +25,7 @@ import io.vertx.ext.couchdb.parameters.DbQueryParams;
  */
 public interface CouchdbAdmin {
 
-  static CouchdbAdmin get(CouchdbClient client) {
+  static CouchdbAdmin create(CouchdbClient client) {
     return new CouchdbAdminImpl(client);
   }
 
@@ -43,7 +44,8 @@ public interface CouchdbAdmin {
    * List all databases.
    *
    * @See https://docs.couchdb.org/en/stable/api/server/common.html#all-dbs
-   * @return Future with the list of databases, fails with {@link CouchdbException} if the operation
+   * @return Future with the list of databases, fails with
+   *         {@link CouchdbException} if the operation
    *         fails.
    */
   Future<JsonArray> allDbs();
@@ -52,7 +54,8 @@ public interface CouchdbAdmin {
    * List all databases, limited by the query parameters.
    *
    * @param options JsonObject with the query parameters.
-   * @return Future with the list of databases, fails with {@link CouchdbException} if the operation
+   * @return Future with the list of databases, fails with
+   *         {@link CouchdbException} if the operation
    *         fails.
    */
   Future<JsonArray> allDbs(DbQueryParams options);
@@ -62,7 +65,8 @@ public interface CouchdbAdmin {
    *
    * @see https://docs.couchdb.org/en/stable/api/server/common.html#dbs-info
    * @param options JsonObject with the query parameters.
-   * @return Future with the list of databases, fails with {@link CouchdbException} if the operation
+   * @return Future with the list of databases, fails with
+   *         {@link CouchdbException} if the operation
    *         fails.
    */
   Future<JsonArray> dbsInfo(DbQueryParams options);
@@ -70,11 +74,22 @@ public interface CouchdbAdmin {
   /**
    * Creates a new database in CouchDB with the specified name and options.
    *
-   * @param databaseName The name of the database, must follow specific naming rules.
-   * @param options JsonObject containing optional parameters for creating the database.
-   * @return Future with the result of the create operation, containing the response from CouchDB.
+   * @param databaseName The name of the database, must follow specific naming
+   *        rules.
+   * @param options JsonObject containing optional parameters for creating
+   *        the database.
+   * @return Future with the result of the create operation, containing the
+   *         response from CouchDB.
    */
   Future<CouchDbDatabase> createDb(String databaseName, DbCreateParams options);
+
+  /**
+   * Checks if the system databases exist, creates them if needed
+   *
+   * @return Future with the result of the check operation, containing the
+   *         response from CouchDB.
+   */
+  Future<JsonObject> checkOrCreateSystemDatabases();
 
   // TODO: implement more
 

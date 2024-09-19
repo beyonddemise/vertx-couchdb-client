@@ -10,16 +10,24 @@
  */
 package io.vertx.ext.couchdb.admin.impl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
+
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.admin.CouchdbAdmin;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
+import io.vertx.ext.couchdb.parameters.BaseQueryParameters;
 import io.vertx.ext.couchdb.parameters.DbCreateParams;
 import io.vertx.ext.couchdb.parameters.DbQueryParams;
 import io.vertx.ext.couchdb.parameters.PathParameterTemplates;
+import io.vertx.ext.couchdb.parameters.QueryParameters;
 import io.vertx.uritemplate.UriTemplate;
 
 public class CouchdbAdminImpl implements CouchdbAdmin {
@@ -54,8 +62,7 @@ public class CouchdbAdminImpl implements CouchdbAdmin {
 
   @Override
   public Future<JsonArray> dbsInfo(DbQueryParams options) {
-    UriTemplate baseUrl = UriTemplate.of("/_dbs_info" + PathParameterTemplates.QUERY);
-    ;
+    UriTemplate baseUrl = UriTemplate.of("/_dbs_info" + PathParameterTemplates.QUERY);;
     return this.client.getJsonArray(baseUrl, options);
   }
 
@@ -74,14 +81,47 @@ public class CouchdbAdminImpl implements CouchdbAdmin {
         .onFailure(err ->
         // DB Doesn't exist, so we can create it
         this.client.putJsonObject(urlToCheck, options)
-            .onFailure(promise::fail) /* TODO: capture error/reason */
-            .onSuccess(v -> CouchDbDatabase.create(this.client, databaseName)))
+            .compose(v -> CouchDbDatabase.create(this.client, databaseName))
+            .onSuccess(db -> promise.complete(db))
+            .onFailure(promise::fail) /* TODO: capture error/reason */)
         .onSuccess(v -> promise.fail("database does exist"));
     return promise.future();
   }
 
   public static boolean isValidDbName(String databaseName) {
     return Pattern.matches("^[a-z][a-z0-9_$()+/-]*$", databaseName);
+  }
+
+  @Override
+  public Future<JsonObject> checkOrCreateSystemDatabases() {
+
+    Promise<JsonObject> promise = Promise.promise();
+    List<String> systemDatabases =
+        Arrays.asList("_users", "_replicator", "_global_changes", "_metadata");
+    QueryParameters options = new BaseQueryParameters();
+    JsonObject systemDbs = new JsonObject();
+    List<Future<Void>> futures = new ArrayList<>();
+    systemDatabases.forEach(db -> {
+      UriTemplate urlToCheck = UriTemplate.of("/" + db);
+      Promise<Void> localPromise = Promise.promise();
+      futures.add(localPromise.future());
+      this.client.doesExist(urlToCheck)
+          .onFailure(err -> this.client.noBody(HttpMethod.PUT, urlToCheck, options)
+              .onFailure(err2 -> {
+                systemDbs.put(db, err2.getMessage());
+                localPromise.complete();
+              })
+              .onSuccess(v -> {
+                systemDbs.put(db, "created");
+                localPromise.complete();
+              }))
+          .onSuccess(v -> {
+            systemDbs.put(db, "exists");
+            localPromise.complete();
+          });
+    });
+    Future.all(futures).onComplete(v -> promise.complete(systemDbs));
+    return promise.future();
   }
 
   // TODO: add admin actions

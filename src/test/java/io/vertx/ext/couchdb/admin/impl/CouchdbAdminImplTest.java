@@ -11,7 +11,9 @@
 package io.vertx.ext.couchdb.admin.impl;
 
 import static org.junit.Assert.assertEquals;
+
 import java.util.stream.Stream;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
