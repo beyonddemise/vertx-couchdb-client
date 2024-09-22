@@ -13,7 +13,7 @@ package io.vertx.ext.couchdb.database;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.couchdb.CouchDbStream;
+import io.vertx.ext.couchdb.streams.CouchDbStream;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.database.impl.CouchDbDatabaseImpl;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
