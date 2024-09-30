@@ -17,6 +17,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.couchdb.designdocument.CouchDbDesignDocument;
 import io.vertx.ext.couchdb.streams.CouchDbStream;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
@@ -163,6 +164,12 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
         });
 
     return promise.future();
+  }
+
+  @Override
+  public Future<CouchDbDesignDocument> getDesignDocument() {
+    // TODO
+    return null;
   }
 
   @Override

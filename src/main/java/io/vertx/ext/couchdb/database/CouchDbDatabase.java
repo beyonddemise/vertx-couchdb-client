@@ -13,6 +13,7 @@ package io.vertx.ext.couchdb.database;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.couchdb.designdocument.CouchDbDesignDocument;
 import io.vertx.ext.couchdb.streams.CouchDbStream;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.database.impl.CouchDbDatabaseImpl;
@@ -52,4 +53,6 @@ public interface CouchDbDatabase {
   }
 
   Future<JsonObject> deleteDocument(String docId, String rev, boolean force);
+
+  Future<CouchDbDesignDocument> getDesignDocument();
 }
