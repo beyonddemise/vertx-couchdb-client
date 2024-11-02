@@ -42,7 +42,7 @@ compile 'io.vertx:vertx-couchdb-client:${vertx.version}'
 
 [source,$lang]
 ----
-{@link examples.CouchDbClientExample}
+{@link examples.CouchDbClientExample.java}
 ----
 
 == Authentication
