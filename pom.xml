@@ -66,33 +66,32 @@
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-core</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-web-client</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
 			<version>4.4</version>
 		</dependency>
+
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-codegen</artifactId>
 			<optional>true</optional>
 		</dependency>
-		<dependency>
-			<groupId>io.vertx</groupId>
-			<artifactId>vertx-docgen</artifactId>
-      <version>3.5.1</version>
-			<optional>true</optional>
-		</dependency>
+
+		<!-- Test dependency definitions and versions -->
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-core</artifactId>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
-		<!-- Test dependency definitions and versions -->
+
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-junit5</artifactId>
@@ -160,7 +159,6 @@
               <configuration>
                 <annotationProcessors>
                   <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-                  <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
                 </annotationProcessors>
               </configuration>
             </execution>
@@ -173,7 +171,6 @@
               <configuration>
                 <annotationProcessors>
                   <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-                  <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
                 </annotationProcessors>
               </configuration>
             </execution>
