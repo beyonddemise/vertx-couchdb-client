@@ -1,12 +1,11 @@
 = Vert.x CouchDB Client
-
 :toc: left
 :lang: $lang
 :$lang: $lang
 
 The Vert.x CouchDB Client is a convenience wrapper around the https://vertx.io/docs/vertx-web-client/java/[Vert.x Web Client] allowing applications to interact with an https://couchdb.apache.org/[Apache CouchDB] (or compatible) instance, for CRUD operations, administrative tasks and database design. CouchDB is a great match for persisting data in a Vert.x application as it natively handles JSON documents.
 
-*Features*
+== Features
 
 * Completely non-blocking
 * Custom codec to support fast serialization to/from Vert.x JSON
@@ -50,6 +49,8 @@ compile 'io.vertx:vertx-couchdb-client:${vertx.version}'
 Authentication is provided by the Vert.x web client, so you will use `Credentials` fit for purpose
 
 == CRUD operations
+
+== security
 
 == Design Tasks
 
