@@ -21,7 +21,7 @@
 	<parent>
 		<artifactId>vertx5-parent</artifactId>
 		<groupId>io.vertx</groupId>
-		<version>3</version>
+		<version>9</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -31,7 +31,7 @@
 
 	<properties>
 		<stack.version>5.0.0-SNAPSHOT</stack.version>
-		<mockito.version>5.12.0</mockito.version>
+		<mockito.version>5.14.2</mockito.version>
 		<jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
 	</properties>
 
@@ -47,14 +47,14 @@
 			<dependency>
 				<groupId>org.junit</groupId>
 				<artifactId>junit-bom</artifactId>
-				<version>5.10.3</version>
+				<version>5.11.3</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.testcontainers</groupId>
 				<artifactId>testcontainers-bom</artifactId>
-				<version>1.19.8</version>
+				<version>1.20.3</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -66,32 +66,32 @@
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-core</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-web-client</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
 			<version>4.4</version>
 		</dependency>
+
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-codegen</artifactId>
 			<optional>true</optional>
 		</dependency>
-		<dependency>
-			<groupId>io.vertx</groupId>
-			<artifactId>vertx-docgen</artifactId>
-			<optional>true</optional>
-		</dependency>
+
+		<!-- Test dependency definitions and versions -->
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-core</artifactId>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
-		<!-- Test dependency definitions and versions -->
+
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-junit5</artifactId>
@@ -130,98 +130,157 @@
 			<scope>test</scope>
 		</dependency>
 
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+
 	</dependencies>
 
-	<build>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<executions>
-						<execution>
-							<id>default-compile</id>
-							<phase>compile</phase>
-							<configuration>
-								<annotationProcessors>
-									<annotationProcessor>
-										io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-									<annotationProcessor>
-										io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
-								</annotationProcessors>
-							</configuration>
-						</execution>
-					</executions>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-		<plugins>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>package-docs</id>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.1.2</version>
-			</plugin>
-			<plugin>
-				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>3.1.2</version>
-			</plugin>
-			<plugin>
-				<groupId>com.diffplug.spotless</groupId>
-				<artifactId>spotless-maven-plugin</artifactId>
-				<version>2.43.0</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>apply</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<formats>
-						<format>
-							<!-- Markdown, JSON and gitignore -->
-							<includes>
-								<include>*.md</include>
-								<include>*.json</include>
-								<include>.gitignore</include>
-							</includes>
-							<excludes>
-								<exclude>dataconversion.md</exclude>
-								<exclude>multivalue_dataconversion.md</exclude>
-								<exclude>singlevalue_dataconversion.md</exclude>
-							</excludes>
-							<trimTrailingWhitespace />
-							<endWithNewline />
-							<indent>
-								<spaces>true</spaces>
-								<spacesPerTab>2</spacesPerTab>
-							</indent>
-						</format>
-					</formats>
-					<!-- ECLIPSE Java format -->
-					<java>
-						<toggleOffOn />
-						<importOrder>
-							<file>
-								${project.basedir}/spotless.importorder</file>
-						</importOrder>
-						<removeUnusedImports />
-						<eclipse>
-							<file>
-								${project.basedir}/eclipse-java-couchdb-style.xml</file>
-						</eclipse>
-					</java>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>default-compile</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+              <configuration>
+                <annotationProcessors>
+                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+                </annotationProcessors>
+              </configuration>
+            </execution>
+            <execution>
+              <id>default-testCompile</id>
+              <phase>test-compile</phase>
+              <goals>
+                <goal>testCompile</goal>
+              </goals>
+              <configuration>
+                <annotationProcessors>
+                  <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
+                </annotationProcessors>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>package-docs</id>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+        <configuration>
+          <groups>UnitTest</groups>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.5.2</version>
+        <configuration>
+          <groups>IntegrationTest</groups>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>2.43.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>apply</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <formats>
+            <format>
+              <!-- Markdown, JSON and gitignore -->
+              <includes>
+                <include>*.md</include>
+                <include>*.json</include>
+                <include>.gitignore</include>
+              </includes>
+              <excludes>
+                <exclude>dataconversion.md</exclude>
+                <exclude>multivalue_dataconversion.md</exclude>
+                <exclude>singlevalue_dataconversion.md</exclude>
+              </excludes>
+              <trimTrailingWhitespace />
+              <endWithNewline />
+              <indent>
+                <spaces>true</spaces>
+                <spacesPerTab>2</spacesPerTab>
+              </indent>
+            </format>
+          </formats>
+          <!-- ECLIPSE Java format -->
+          <java>
+            <toggleOffOn />
+            <importOrder>
+              <file>${project.basedir}/spotless.importorder</file>
+            </importOrder>
+            <removeUnusedImports />
+            <eclipse>
+              <file>${project.basedir}/eclipse-java-couchdb-style.xml</file>
+            </eclipse>
+          </java>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/annotations</source>
+              </sources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>add-test-source</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/annotations</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
