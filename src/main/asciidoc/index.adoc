@@ -1,12 +1,11 @@
 = Vert.x CouchDB Client
-
 :toc: left
 :lang: $lang
 :$lang: $lang
 
 The Vert.x CouchDB Client is a convenience wrapper around the https://vertx.io/docs/vertx-web-client/java/[Vert.x Web Client] allowing applications to interact with an https://couchdb.apache.org/[Apache CouchDB] (or compatible) instance, for CRUD operations, administrative tasks and database design. CouchDB is a great match for persisting data in a Vert.x application as it natively handles JSON documents.
 
-*Features*
+== Features
 
 * Completely non-blocking
 * Custom codec to support fast serialization to/from Vert.x JSON
@@ -40,16 +39,36 @@ compile 'io.vertx:vertx-couchdb-client:${vertx.version}'
 
 == Creating a client
 
+Using localhost, default port and anonymous access
+
 [source,$lang]
 ----
-{@link examples.CouchDbClientExample.java}
+{@link examples.CouchDbClientExample#create}
 ----
+
+The same but with credentials for authentication
+
+[source,$lang]
+----
+{@link examples.CouchDbClientExample#createAuthenticated}
+----
+
+Full example with all builder options
+
+[source,$lang]
+----
+{@link examples.CouchDbClientExample#createFull}
+----
+
 
 == Authentication
 
-Authentication is provided by the Vert.x web client, so you will use `Credentials` fit for purpose
+Authentication is provided by the Vert.x web client, so you will use https://vertx.io/docs/apidocs/io/vertx/ext/auth/authentication/Credentials.html[`Credentials`] fit for purpose.
+You also can use an https://vertx.io/docs/apidocs/io/vertx/ext/web/client/OAuth2WebClient.html[OAUth2WebClient] as https://vertx.io/docs/vertx-web-client/java/#_oauth2_security[described here]
 
 == CRUD operations
+
+== security
 
 == Design Tasks
 
