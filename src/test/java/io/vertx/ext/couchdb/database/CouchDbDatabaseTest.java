@@ -214,12 +214,22 @@ class CouchDbDatabaseTest {
 
     database.getSecurity()
         .onSuccess(result -> testContext.verify(() -> {
-          assertEquals("peter", result.getJsonObject("admins").getJsonArray("names").getString(0));
-          assertEquals("richard",
-              result.getJsonObject("members").getJsonArray("names").getString(0));
-          assertEquals("spiderMan",
-              result.getJsonObject("admins").getJsonArray("roles").getString(0));
-          assertEquals("tiger", result.getJsonObject("members").getJsonArray("roles").getString(0));
+          assertNotNull(result);
+          assertTrue(result.getAdminNames().contains("peter"));
+          assertTrue(result.getAdminRoles().contains("spiderMan"));
+          assertTrue(result.getMemberNames().contains("richard"));
+          assertTrue(result.getMemberRoles().contains("tiger"));
+
+          assertFalse(result.getAdminNames().contains("spiderMan"));
+          assertFalse(result.getAdminRoles().contains("peter"));
+          assertFalse(result.getMemberNames().contains("tiger"));
+          assertFalse(result.getMemberRoles().contains("richard"));
+
+          assertFalse(result.getAdminNames().contains("richard"));
+          assertFalse(result.getAdminRoles().contains("tiger"));
+          assertFalse(result.getMemberNames().contains("peter"));
+          assertFalse(result.getMemberRoles().contains("spiderMan"));
+
           testContext.completeNow();
         }))
         .onFailure(err -> testContext.failNow(err));

@@ -11,7 +11,6 @@
 package io.vertx.ext.couchdb.database.impl;
 
 import java.util.Objects;
-
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
@@ -82,9 +81,13 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
   }
 
   @Override
-  public Future<JsonObject> getSecurity() {
+  public Future<DBSecurity> getSecurity() {
+    Promise<DBSecurity> promise = Promise.promise();
     UriTemplate urlToCheck = PathParameterTemplates.databaseSecurity(databaseName);
-    return client.getJsonObject(urlToCheck, null);
+    client.getJsonObject(urlToCheck, null)
+        .onSuccess(json -> promise.complete(DBSecurity.fromJson(json)))
+        .onFailure(promise::fail);
+    return promise.future();
   }
 
   @Override

@@ -37,7 +37,7 @@ public interface CouchDbDatabase {
 
   Future<JsonObject> getDocument(String docId, DocumentGetParams options);
 
-  Future<JsonObject> getSecurity();
+  Future<DBSecurity> getSecurity();
 
   Future<JsonObject> setSecurity(DBSecurity security);
 
