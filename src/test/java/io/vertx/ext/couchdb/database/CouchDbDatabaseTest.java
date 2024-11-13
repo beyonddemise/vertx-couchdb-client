@@ -12,20 +12,19 @@
 package io.vertx.ext.couchdb.database;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import java.util.concurrent.TimeUnit;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -203,13 +202,15 @@ class CouchDbDatabaseTest {
   @Test
   void testGetSecuritySuccess(VertxTestContext testContext) throws InterruptedException {
     JsonObject res = new JsonObject()
-        .put("admins",
-            new JsonObject().put("names", new JsonArray().add("peter"))
-                .put("roles", new JsonArray().add("spiderMan")))
-        .put("members",
-            new JsonObject().put("names", new JsonArray().add("richard")).put("roles",
-                new JsonArray().add("tiger")));
-    when(mockClient.getJsonObject(any(), any())).thenReturn(Future.succeededFuture(res));
+        .put(DBSecurity.ADMINS, new JsonObject()
+            .put(DBSecurity.NAMES, new JsonArray().add("peter"))
+            .put(DBSecurity.ROLES, new JsonArray().add("spiderMan")))
+        .put(DBSecurity.MEMBERS, new JsonObject()
+            .put(DBSecurity.NAMES, new JsonArray().add("richard"))
+            .put(DBSecurity.ROLES, new JsonArray().add("tiger")));
+
+    when(mockClient.getJsonObject(any(), any()))
+        .thenReturn(Future.succeededFuture(res));
 
 
     database.getSecurity()

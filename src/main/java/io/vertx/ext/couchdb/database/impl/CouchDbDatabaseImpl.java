@@ -94,8 +94,7 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
   public Future<JsonObject> setSecurity(DBSecurity dbSecurityObject) {
 
     Objects.requireNonNull(dbSecurityObject);
-    JsonObject requestSecurityPayload =
-        DBSecurity.toJson(dbSecurityObject);
+    JsonObject requestSecurityPayload = dbSecurityObject.toJson();
     Promise<JsonObject> promise = Promise.promise();
     UriTemplate urlToCheck = PathParameterTemplates.databaseSecurity(databaseName);
 

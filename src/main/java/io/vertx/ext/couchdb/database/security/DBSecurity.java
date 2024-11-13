@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2024 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
 package io.vertx.ext.couchdb.database.security;
 
 import java.util.Collection;
@@ -11,11 +21,11 @@ import io.vertx.core.json.JsonObject;
 
 public class DBSecurity {
 
-  static final String SYSTEM_ADMIN_ROLE = "_admin";
-  static final String NAMES = "names";
-  static final String ROLES = "roles";
-  static final String ADMINS = " admins";
-  static final String MEMBERS = "members";
+  public static final String SYSTEM_ADMIN_ROLE = "_admin";
+  public static final String NAMES = "names";
+  public static final String ROLES = "roles";
+  public static final String ADMINS = " admins";
+  public static final String MEMBERS = "members";
 
   // 4 distince security groups
   private final Set<String> adminNames = new HashSet<>();
@@ -142,19 +152,25 @@ public class DBSecurity {
     return this.memberRoles;
   }
 
-  public static JsonObject toJson(DBSecurity dbSec) {
+  public JsonObject toJson() {
     JsonObject result = new JsonObject();
     JsonObject resAdmins = new JsonObject();
     JsonObject resMembers = new JsonObject();
 
-    resAdmins.put(NAMES, dbSec.getAdminNames());
-    resAdmins.put(ROLES, dbSec.getAdminRoles());
-    resMembers.put(NAMES, dbSec.getMemberNames());
-    resMembers.put(ROLES, dbSec.getMemberRoles());
+    resAdmins.put(NAMES, toJsonArray(this.getAdminNames()));
+    resAdmins.put(ROLES, toJsonArray(this.getAdminRoles()));
+    resMembers.put(NAMES, toJsonArray(this.getMemberNames()));
+    resMembers.put(ROLES, toJsonArray(this.getMemberRoles()));
 
     result.put(ADMINS, resAdmins);
     result.put(MEMBERS, resMembers);
 
+    return result;
+  }
+
+  JsonArray toJsonArray(Collection<String> collection) {
+    JsonArray result = new JsonArray();
+    collection.forEach(result::add);
     return result;
   }
 
