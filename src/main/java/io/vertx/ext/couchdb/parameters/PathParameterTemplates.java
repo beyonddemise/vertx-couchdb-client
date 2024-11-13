@@ -36,6 +36,13 @@ public class PathParameterTemplates {
     return templateWithQueryParams("/{database}/{documentId}", variables);
   }
 
+
+  public static UriTemplate databaseSecurity(String dbName) {
+    Variables variables = Variables.variables();
+    variables.set("database", dbName);
+    return templateWithQueryParams("/{database}/_security", variables);
+  }
+
   public static UriTemplate attachment(String dbName, String documentId, String attachmentName) {
     Variables variables = Variables.variables();
     variables.set("database", dbName);

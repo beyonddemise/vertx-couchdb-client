@@ -29,8 +29,10 @@ import org.mockito.MockitoAnnotations;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.CouchdbClient;
+import io.vertx.ext.couchdb.database.security.DBSecurity;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
 import io.vertx.ext.couchdb.testannotations.UnitTest;
 import io.vertx.ext.web.client.HttpRequest;
@@ -51,6 +53,9 @@ class CouchDbDatabaseTest {
 
   @Mock
   private HttpResponse<Buffer> mockHttpResponse;
+
+  @Mock
+  private DBSecurity mockDbSecurity;
 
   private CouchDbDatabase database;
 
@@ -191,6 +196,56 @@ class CouchDbDatabaseTest {
           testContext.completeNow();
         }))
         .onSuccess(result -> testContext.failNow("Expected to fail, but succeeded"));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void testGetSecuritySuccess(VertxTestContext testContext) throws InterruptedException {
+    JsonObject res = new JsonObject()
+        .put("admins",
+            new JsonObject().put("names", new JsonArray().add("peter"))
+                .put("roles", new JsonArray().add("spiderMan")))
+        .put("members",
+            new JsonObject().put("names", new JsonArray().add("richard")).put("roles",
+                new JsonArray().add("tiger")));
+    when(mockClient.getJsonObject(any(), any())).thenReturn(Future.succeededFuture(res));
+
+
+    database.getSecurity()
+        .onSuccess(result -> testContext.verify(() -> {
+          assertEquals("peter", result.getJsonObject("admins").getJsonArray("names").getString(0));
+          assertEquals("richard",
+              result.getJsonObject("members").getJsonArray("names").getString(0));
+          assertEquals("spiderMan",
+              result.getJsonObject("admins").getJsonArray("roles").getString(0));
+          assertEquals("tiger", result.getJsonObject("members").getJsonArray("roles").getString(0));
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void testUpdateSecuritySuccess(VertxTestContext testContext) throws InterruptedException {
+    JsonObject payload = new JsonObject()
+        .put("admins",
+            new JsonObject().put("names", new JsonArray().add("updatedPeter")).put("roles",
+                "updatedSpiderMan"))
+        .put("members",
+            new JsonObject().put("names", new JsonArray().add("updatedRichard")).put("roles",
+                "updatedTiger"));
+    when(mockClient.putJsonObject(any(), any(),
+        any())).thenReturn(Future.succeededFuture(payload));
+
+
+    database.setSecurity(mockDbSecurity)
+        .onSuccess(result -> testContext.verify(() -> {
+          assertEquals("true", result.getString("ok"));
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
 
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
