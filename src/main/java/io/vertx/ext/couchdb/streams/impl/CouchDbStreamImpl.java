@@ -14,7 +14,6 @@ package io.vertx.ext.couchdb.streams.impl;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.streams.ReadStream;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.streams.CouchDbStream;
 
@@ -85,12 +84,12 @@ public class CouchDbStreamImpl implements CouchDbStream {
     }
 
     JsonObject queryParams = new JsonObject()
-      .put("limit", batchSize + 1)
-      .put("include_docs", true);
+        .put("limit", batchSize + 1)
+        .put("include_docs", true);
 
     if (lastDocId != null) {
       queryParams.put("startkey", "\"" + lastDocId + "\"")
-        .put("skip", 1);
+          .put("skip", 1);
     }
 
     // input logic for fetch

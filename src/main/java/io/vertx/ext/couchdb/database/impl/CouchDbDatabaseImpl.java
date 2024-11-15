@@ -11,18 +11,18 @@
 package io.vertx.ext.couchdb.database.impl;
 
 import java.util.Objects;
-
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.couchdb.streams.CouchDbStream;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
+import io.vertx.ext.couchdb.database.security.DBSecurity;
 import io.vertx.ext.couchdb.parameters.BaseQueryParameters;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
 import io.vertx.ext.couchdb.parameters.PathParameterTemplates;
+import io.vertx.ext.couchdb.streams.CouchDbStream;
 import io.vertx.uritemplate.UriTemplate;
 
 public class CouchDbDatabaseImpl implements CouchDbDatabase {
@@ -76,6 +76,34 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
             err -> this.client.putJsonObject(urlToCheck, null, document)
                 .onFailure(promise::fail)
                 .onSuccess(promise::succeed));
+
+    return promise.future();
+  }
+
+  @Override
+  public Future<DBSecurity> getSecurity() {
+    Promise<DBSecurity> promise = Promise.promise();
+    UriTemplate urlToCheck = PathParameterTemplates.databaseSecurity(databaseName);
+    client.getJsonObject(urlToCheck, null)
+        .onSuccess(json -> promise.complete(DBSecurity.fromJson(json)))
+        .onFailure(promise::fail);
+    return promise.future();
+  }
+
+  @Override
+  public Future<JsonObject> setSecurity(DBSecurity dbSecurityObject) {
+
+    Objects.requireNonNull(dbSecurityObject);
+    JsonObject requestSecurityPayload = dbSecurityObject.toJson();
+    Promise<JsonObject> promise = Promise.promise();
+    UriTemplate urlToCheck = PathParameterTemplates.databaseSecurity(databaseName);
+
+    this.client.putJsonObject(urlToCheck, null, requestSecurityPayload)
+        .onFailure(promise::fail)
+        .onSuccess(a -> {
+          JsonObject successResponse = new JsonObject().put("ok", true);
+          promise.complete(successResponse);
+        });
 
     return promise.future();
   }

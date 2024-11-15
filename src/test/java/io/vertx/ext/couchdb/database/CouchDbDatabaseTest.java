@@ -12,25 +12,26 @@
 package io.vertx.ext.couchdb.database;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 import java.util.concurrent.TimeUnit;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.CouchdbClient;
+import io.vertx.ext.couchdb.database.security.DBSecurity;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
 import io.vertx.ext.couchdb.testannotations.UnitTest;
 import io.vertx.ext.web.client.HttpRequest;
@@ -51,6 +52,9 @@ class CouchDbDatabaseTest {
 
   @Mock
   private HttpResponse<Buffer> mockHttpResponse;
+
+  @Mock
+  private DBSecurity mockDbSecurity;
 
   private CouchDbDatabase database;
 
@@ -191,6 +195,68 @@ class CouchDbDatabaseTest {
           testContext.completeNow();
         }))
         .onSuccess(result -> testContext.failNow("Expected to fail, but succeeded"));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void testGetSecuritySuccess(VertxTestContext testContext) throws InterruptedException {
+    JsonObject res = new JsonObject()
+        .put(DBSecurity.ADMINS, new JsonObject()
+            .put(DBSecurity.NAMES, new JsonArray().add("peter"))
+            .put(DBSecurity.ROLES, new JsonArray().add("spiderMan")))
+        .put(DBSecurity.MEMBERS, new JsonObject()
+            .put(DBSecurity.NAMES, new JsonArray().add("richard"))
+            .put(DBSecurity.ROLES, new JsonArray().add("tiger")));
+
+    when(mockClient.getJsonObject(any(), any()))
+        .thenReturn(Future.succeededFuture(res));
+
+
+    database.getSecurity()
+        .onSuccess(result -> testContext.verify(() -> {
+          assertNotNull(result);
+          assertTrue(result.getAdminNames().contains("peter"));
+          assertTrue(result.getAdminRoles().contains("spiderMan"));
+          assertTrue(result.getMemberNames().contains("richard"));
+          assertTrue(result.getMemberRoles().contains("tiger"));
+
+          assertFalse(result.getAdminNames().contains("spiderMan"));
+          assertFalse(result.getAdminRoles().contains("peter"));
+          assertFalse(result.getMemberNames().contains("tiger"));
+          assertFalse(result.getMemberRoles().contains("richard"));
+
+          assertFalse(result.getAdminNames().contains("richard"));
+          assertFalse(result.getAdminRoles().contains("tiger"));
+          assertFalse(result.getMemberNames().contains("peter"));
+          assertFalse(result.getMemberRoles().contains("spiderMan"));
+
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void testUpdateSecuritySuccess(VertxTestContext testContext) throws InterruptedException {
+    JsonObject payload = new JsonObject()
+        .put("admins",
+            new JsonObject().put("names", new JsonArray().add("updatedPeter")).put("roles",
+                "updatedSpiderMan"))
+        .put("members",
+            new JsonObject().put("names", new JsonArray().add("updatedRichard")).put("roles",
+                "updatedTiger"));
+    when(mockClient.putJsonObject(any(), any(),
+        any())).thenReturn(Future.succeededFuture(payload));
+
+
+    database.setSecurity(mockDbSecurity)
+        .onSuccess(result -> testContext.verify(() -> {
+          assertEquals("true", result.getString("ok"));
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
 
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
