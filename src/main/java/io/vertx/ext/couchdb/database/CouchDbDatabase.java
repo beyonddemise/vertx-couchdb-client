@@ -44,7 +44,7 @@ public interface CouchDbDatabase {
 
   Future<DBDesignDoc> getDesignDoc(String designDocName);
 
-  Future<JsonObject> setDesignDoc(DBDesignDoc designDoc);
+  Future<JsonObject> createUpdateDesignDoc(DBDesignDoc designDoc);
 
   default Future<JsonObject> getDocument(String docId) {
     return this.getDocument(docId, null);
@@ -62,7 +62,7 @@ public interface CouchDbDatabase {
   }
 
   default Future<JsonObject> deleteDesignDocument(String docId, String rev) {
-    return this.deleteDocument(docId, rev, false);
+    return this.deleteDesignDocument(docId, rev, false);
   }
 
   Future<JsonObject> deleteDocument(String docId, String rev, boolean force);

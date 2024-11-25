@@ -5,8 +5,8 @@ package io.vertx.ext.couchdb.database.designdoc;
 // }
 
 public enum ReduceOptions {
-  MAP("map"), COUNT("count"), REDUCE("reduce"), APPROX_COUNT_DISTINCT(
-      "approx_count_distinct"), STATS("stats"), SUM("sum"), CUSTOM("custom");
+  COUNT("_count"), APPROX_COUNT_DISTINCT(
+      "_approx_count_distinct"), STATS("_stats"), SUM("_sum"), CUSTOM("CUSTOM"), NONE("NONE");
 
   private final String value;
 
@@ -25,7 +25,6 @@ public enum ReduceOptions {
         return option;
       }
     }
-    return CUSTOM;
-    // throw new IllegalArgumentException("Unknown option: " + value);
+    return NONE;
   }
 }

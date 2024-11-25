@@ -211,15 +211,52 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
     return promise.future();
   }
 
+  /*
+   * The design documents have some agreement upon their fields and structure. Currently it is the
+   * following:
+   * language (string): Defines Query Server to process design document functions
+   * options (object): View’s default options
+   * filters (object): Filter functions definition
+   * updates (object): Update functions definition
+   * validate_doc_update (string): Validate document update function source
+   * views (object): View functions definition.
+   * autoupdate (boolean): Indicates whether to automatically build indexes defined in this design
+   * document. Default is true.
+   */
   @Override
-  public Future<JsonObject> setDesignDoc(DBDesignDoc designDoc) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'setDesignDoc'");
+  public Future<JsonObject> createUpdateDesignDoc(DBDesignDoc designDoc) {
+
+    Objects.requireNonNull(designDoc);
+    JsonObject requestSecurityPayload = designDoc.toJson();
+    Promise<JsonObject> promise = Promise.promise();
+    UriTemplate urlToCheck = PathParameterTemplates.databaseSecurity(databaseName);
+
+    this.client.putJsonObject(urlToCheck, null, requestSecurityPayload)
+        .onFailure(promise::fail)
+        .onSuccess(promise::succeed);
+
+    return promise.future();
   }
 
   @Override
-  public Future<JsonObject> deleteDesignDocument(String docId, String rev, boolean force) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'setDesignDoc'");
+  public Future<JsonObject> deleteDesignDocument(String designDocName, String rev, boolean force) {
+    Promise<JsonObject> promise = Promise.promise();
+    UriTemplate urlToCheck = PathParameterTemplates.databaseDesignDoc(databaseName, designDocName);
+    this.client.getEtag(urlToCheck)
+        .onFailure(promise::fail)
+        .onSuccess(eTag -> {
+          if (force || rev.equals(eTag)) {
+            BaseQueryParameters params = new BaseQueryParameters();
+            params.addParameter("rev", eTag);
+            this.client.deleteJsonObject(urlToCheck, params)
+                .onFailure(promise::fail)
+                .onSuccess(promise::succeed);
+          } else {
+            promise.fail("rev / eTag mismatch");
+          }
+
+        });
+
+    return promise.future();
   }
 }

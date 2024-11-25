@@ -55,6 +55,7 @@ public class DBDesignDoc {
 
   public JsonObject toJson() {
     JsonObject result = new JsonObject();
+    // if new Json need to figure out how to have id and rev
     result.put("_id", this.getId());
     result.put("_rev", this.getRev());
     result.put("language", this.getLanguage());

@@ -68,6 +68,9 @@ public class DBDesignView {
       case "_approx_count_distinct":
         finalReduce = ReduceOptions.APPROX_COUNT_DISTINCT;
         break;
+      case "":
+        finalReduce = ReduceOptions.NONE;
+        break;
       default:
         finalReduce = ReduceOptions.CUSTOM;
         break;
