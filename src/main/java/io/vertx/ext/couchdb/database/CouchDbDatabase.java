@@ -14,6 +14,7 @@ import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.CouchdbClient;
+import io.vertx.ext.couchdb.database.designdoc.DBDesignDoc;
 import io.vertx.ext.couchdb.database.impl.CouchDbDatabaseImpl;
 import io.vertx.ext.couchdb.database.security.DBSecurity;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
@@ -41,6 +42,10 @@ public interface CouchDbDatabase {
 
   Future<JsonObject> setSecurity(DBSecurity security);
 
+  Future<DBDesignDoc> getDesignDoc(String designDocName);
+
+  Future<JsonObject> setDesignDoc(DBDesignDoc designDoc);
+
   default Future<JsonObject> getDocument(String docId) {
     return this.getDocument(docId, null);
   };
@@ -56,5 +61,11 @@ public interface CouchDbDatabase {
     return this.deleteDocument(docId, rev, false);
   }
 
+  default Future<JsonObject> deleteDesignDocument(String docId, String rev) {
+    return this.deleteDocument(docId, rev, false);
+  }
+
   Future<JsonObject> deleteDocument(String docId, String rev, boolean force);
+
+  Future<JsonObject> deleteDesignDocument(String docId, String rev, boolean force);
 }

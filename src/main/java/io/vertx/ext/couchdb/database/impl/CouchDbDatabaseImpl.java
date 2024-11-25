@@ -11,6 +11,7 @@
 package io.vertx.ext.couchdb.database.impl;
 
 import java.util.Objects;
+
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
@@ -18,6 +19,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.database.CouchDbDatabase;
+import io.vertx.ext.couchdb.database.designdoc.DBDesignDoc;
 import io.vertx.ext.couchdb.database.security.DBSecurity;
 import io.vertx.ext.couchdb.parameters.BaseQueryParameters;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
@@ -196,5 +198,28 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
   @Override
   public CouchDbStream stream(JsonObject options) {
     throw new UnsupportedOperationException("Unimplemented method 'stream'");
+  }
+
+  @Override
+  public Future<DBDesignDoc> getDesignDoc(String designDocName) {
+    // TODO Auto-generated method stub
+    Promise<DBDesignDoc> promise = Promise.promise();
+    UriTemplate urlToCheck = PathParameterTemplates.databaseDesignDoc(databaseName, designDocName);
+    client.getJsonObject(urlToCheck, null)
+        .onSuccess(json -> promise.complete(DBDesignDoc.fromJson(json)))
+        .onFailure(promise::fail);
+    return promise.future();
+  }
+
+  @Override
+  public Future<JsonObject> setDesignDoc(DBDesignDoc designDoc) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'setDesignDoc'");
+  }
+
+  @Override
+  public Future<JsonObject> deleteDesignDocument(String docId, String rev, boolean force) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'setDesignDoc'");
   }
 }

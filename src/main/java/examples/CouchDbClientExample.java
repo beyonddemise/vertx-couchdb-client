@@ -10,11 +10,11 @@
  */
 package examples;
 
+import io.vertx.core.Vertx;
 import io.vertx.ext.auth.authentication.Credentials;
 import io.vertx.ext.couchdb.CouchdbClient;
 import io.vertx.ext.couchdb.CouchdbClientBuilder;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.core.Vertx;
 
 public class CouchDbClientExample {
 
