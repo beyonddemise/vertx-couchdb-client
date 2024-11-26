@@ -201,7 +201,7 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
   }
 
   @Override
-  public Future<DBDesignDoc> getDesignDocument(String designDocName, DocumentGetParams options) {
+  public Future<DBDesignDoc> getDesignDocument(String designDocName) {
     Promise<DBDesignDoc> promise = Promise.promise();
     UriTemplate urlToCheck = PathParameterTemplates.databaseDesignDoc(databaseName, designDocName);
     client.getJsonObject(urlToCheck, null)
@@ -241,8 +241,6 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
     Promise<JsonObject> promise = Promise.promise();
     UriTemplate urlToCheck =
         PathParameterTemplates.databaseDesignDoc(databaseName, designDoc.getName());
-
-    // JsonObject result = new JsonObject();
     this.client.putJsonObject(urlToCheck, null, requestSecurityPayload)
         // .compose(returnJson -> {
         // result.put("rev", returnJson.getString("rev",""));
@@ -270,7 +268,8 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
     Objects.requireNonNull(designDoc);
     JsonObject requestSecurityPayload = designDoc.toJson();
     Promise<JsonObject> promise = Promise.promise();
-    UriTemplate urlToCheck = PathParameterTemplates.databaseSecurity(databaseName);
+    UriTemplate urlToCheck =
+        PathParameterTemplates.databaseDesignDoc(databaseName, designDoc.getName());
 
     this.client.putJsonObject(urlToCheck, null, requestSecurityPayload)
         .onFailure(promise::fail)
@@ -280,9 +279,10 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
   }
 
   @Override
-  public Future<JsonObject> deleteDesignDocument(String designDocName, String rev, boolean force) {
+  public Future<JsonObject> deleteDesignDocument(DBDesignDoc designDoc, String rev, boolean force) {
     Promise<JsonObject> promise = Promise.promise();
-    UriTemplate urlToCheck = PathParameterTemplates.databaseDesignDoc(databaseName, designDocName);
+    UriTemplate urlToCheck =
+        PathParameterTemplates.databaseDesignDoc(databaseName, designDoc.getName());
     this.client.getEtag(urlToCheck)
         .onFailure(promise::fail)
         .onSuccess(eTag -> {

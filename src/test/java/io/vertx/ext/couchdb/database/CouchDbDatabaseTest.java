@@ -287,7 +287,7 @@ class CouchDbDatabaseTest {
         .thenReturn(Future.succeededFuture(res));
 
 
-    database.getDesignDocument("test-design-doc", null)
+    database.getDesignDocument("test-design-doc")
         .onSuccess(result -> testContext.verify(() -> {
           assertNotNull(result);
           assertEquals(result.getViews().size(), 1);
@@ -300,7 +300,6 @@ class CouchDbDatabaseTest {
 
           // to json test
           JsonObject resObj = result.toJson();
-          System.out.println(resObj.toString());
           JsonObject viewsObj = resObj.getJsonObject("views", new JsonObject());
           assertEquals(viewsObj.getJsonObject("test-view", new JsonObject()).getString("map"),
               "function (doc) {\\n" + //
@@ -331,8 +330,8 @@ class CouchDbDatabaseTest {
     view2.setReduce(ReduceOptions.SUM);
     designDoc.setName("test-design-doc");
     designDoc.setLanguage("javascript");
-    designDoc.getViews().put("test-view", view1);
-    designDoc.getViews().put("test-view2", view2);
+    designDoc.addView("test-view", view1);
+    designDoc.addView("test-view2", view2);
 
     JsonObject res = new JsonObject()
         .put("ok", true)
@@ -346,13 +345,13 @@ class CouchDbDatabaseTest {
     database.createDesignDocument(designDoc)
         .onSuccess(result -> testContext.verify(() -> {
           assertNotNull(result);
-          System.out.println("result" + result.toString());
-          // assertEquals(result.getBoolean("ok", false), true);
+          assertEquals(result.getBoolean("ok", false), true);
           assertEquals(result.getString("id", ""), "_design/test-design-doc");
+          testContext.completeNow();
         }))
         .onFailure(err -> testContext.failNow(err));
 
-    assertTrue(testContext.awaitCompletion(10, TimeUnit.SECONDS));
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
 }

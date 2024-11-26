@@ -93,15 +93,11 @@ public class DBDesignDoc {
     JsonObject viewsObject = new JsonObject();
     for (Map.Entry<String, DBDesignView> entry : this.views.entrySet()) {
       // You can directly add any object, Vert.x will handle conversion to JSON types
-      System.out.println("entry.getValue().getMap()" + entry.getValue().getMap());
-      System.out.println(
-          "entry.getValue().getReduce().getValue())" + entry.getValue().getReduce().getValue());
       viewsObject.put(entry.getKey(), new JsonObject()
           .put("map", entry.getValue().getMap())
           .put("reduce", entry.getValue().getReduce().getValue()));
     }
     result.put("views", viewsObject);
-    System.out.println("imresult" + result.toString());
     return result;
   }
 

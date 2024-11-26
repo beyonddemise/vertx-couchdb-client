@@ -38,16 +38,6 @@ public interface CouchDbDatabase {
 
   Future<JsonObject> getDocument(String docId, DocumentGetParams options);
 
-  Future<DBSecurity> getSecurity();
-
-  Future<JsonObject> setSecurity(DBSecurity security);
-
-  Future<DBDesignDoc> getDesignDocument(String designDocName, DocumentGetParams options);
-
-  Future<JsonObject> createDesignDocument(DBDesignDoc designDoc);
-
-  Future<JsonObject> updateDesignDocument(DBDesignDoc designDoc);
-
   default Future<JsonObject> getDocument(String docId) {
     return this.getDocument(docId, null);
   };
@@ -63,16 +53,27 @@ public interface CouchDbDatabase {
     return this.deleteDocument(docId, rev, false);
   }
 
+  Future<JsonObject> deleteDocument(String docId, String rev, boolean force);
+
   // {
   // "ok": true,
   // "id": "bfccbf7d245e15d97bb8c725a00000a4",
   // "rev": "2-eec205a9d413992850a6e32678485900"
   // }
-  default Future<JsonObject> deleteDesignDocument(String docId, String rev) {
-    return this.deleteDesignDocument(docId, rev, false);
+
+  Future<DBSecurity> getSecurity();
+
+  Future<JsonObject> setSecurity(DBSecurity security);
+
+  Future<DBDesignDoc> getDesignDocument(String designDocName);
+
+  Future<JsonObject> createDesignDocument(DBDesignDoc designDoc);
+
+  Future<JsonObject> updateDesignDocument(DBDesignDoc designDoc);
+
+  default Future<JsonObject> deleteDesignDocument(DBDesignDoc designDoc, String rev) {
+    return this.deleteDesignDocument(designDoc, rev, false);
   }
 
-  Future<JsonObject> deleteDocument(String docId, String rev, boolean force);
-
-  Future<JsonObject> deleteDesignDocument(String docId, String rev, boolean force);
+  Future<JsonObject> deleteDesignDocument(DBDesignDoc designDocName, String rev, boolean force);
 }
