@@ -10,25 +10,53 @@
  */
 package io.vertx.ext.couchdb.database.designdoc;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import io.vertx.core.json.JsonObject;
 
 
 public class DBDesignDoc {
 
-  private List<DBDesignView> views;
+  Map<String, DBDesignView> views = new HashMap<String, DBDesignView>(); // to use map
   private String _id;
   private String _rev;
   private String language;
+  private String name;
 
   /**
    * @return the language
    */
   public String getLanguage() {
     return language;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * @param language the language to set
+   */
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  /**
+   * @return the language
+   */
+  public Map<String, DBDesignView> getViews() {
+    return views;
+  }
+
+
+  public void removeView(String viewName) {
+    this.views.remove(viewName);
+  }
+
+  public void addView(String viewName, DBDesignView view) {
+    this.views.put(viewName, view);
   }
 
   /**
@@ -52,21 +80,28 @@ public class DBDesignDoc {
     return _rev;
   }
 
-
   public JsonObject toJson() {
     JsonObject result = new JsonObject();
     // if new Json need to figure out how to have id and rev
-    result.put("_id", this.getId());
+    if (this.getId() == null || this.getId().isEmpty()) {
+      result.put("_id", "_design/" + this.getName());
+    } else {
+      result.put("_id", this.getId());
+    }
     result.put("_rev", this.getRev());
     result.put("language", this.getLanguage());
     JsonObject viewsObject = new JsonObject();
-    this.views.forEach(view -> {
-      viewsObject.put(view.getViewName(),
-          new JsonObject()
-              .put("map", view.getMap())
-              .put("reduce", view.getReduce()));
-    });
+    for (Map.Entry<String, DBDesignView> entry : this.views.entrySet()) {
+      // You can directly add any object, Vert.x will handle conversion to JSON types
+      System.out.println("entry.getValue().getMap()" + entry.getValue().getMap());
+      System.out.println(
+          "entry.getValue().getReduce().getValue())" + entry.getValue().getReduce().getValue());
+      viewsObject.put(entry.getKey(), new JsonObject()
+          .put("map", entry.getValue().getMap())
+          .put("reduce", entry.getValue().getReduce().getValue()));
+    }
     result.put("views", viewsObject);
+    System.out.println("imresult" + result.toString());
     return result;
   }
 
@@ -89,27 +124,42 @@ public class DBDesignDoc {
   // },
   // "language": "javascript"
   // }
-  public static DBDesignDoc fromJson(JsonObject dbSecObject) {
+
+  // updateServerResponseMerge function check ID and update the rev
+
+  public static DBDesignDoc fromJson(JsonObject dbSecObject, boolean isNew) {
+    if (!isNew) {
+      // id and rev
+      Objects.requireNonNull(dbSecObject.getString("_id"));
+      Objects.requireNonNull(dbSecObject.getString("_rev"));
+    }
     Objects.requireNonNull(dbSecObject);
     DBDesignDoc dbDesignDoc = new DBDesignDoc();
     dbDesignDoc._id = dbSecObject.getString("_id", "");
     dbDesignDoc._rev = dbSecObject.getString("_rev", "");
     dbDesignDoc.language = dbSecObject.getString("language", "");
     JsonObject viewsObject = dbSecObject.getJsonObject("views", new JsonObject());
-    // get jsonobject names
-    Set<String> fieldNames = viewsObject.fieldNames();
 
-    fieldNames.forEach(viewName -> {
-      DBDesignView designView =
-          DBDesignView.fromJson(viewsObject.getJsonObject(viewName, new JsonObject()));
-      dbDesignDoc.views.add(designView);
-    });
+
+    // Iterate over the keys in the outer JsonObject
+    for (String key : viewsObject.fieldNames()) {
+      // Get the value for the key (which should be a JsonObject)
+      JsonObject innerJson = viewsObject.getJsonObject(key, new JsonObject());
+      DBDesignView toView = DBDesignView.fromJson(innerJson, key);
+      // Put the key and the inner JsonObject into the HashMap
+      if (innerJson != null && !innerJson.isEmpty()) {
+        dbDesignDoc.views.put(key, toView);
+      }
+    }
 
     return dbDesignDoc;
   }
 
+  public static DBDesignDoc fromJson(JsonObject dbSecObject) {
+    return DBDesignDoc.fromJson(dbSecObject, false);
+  }
   // to implement
-  // public boolean isValidJson(){
+  // public boolean isValidJavascript (){
 
   // }
 }

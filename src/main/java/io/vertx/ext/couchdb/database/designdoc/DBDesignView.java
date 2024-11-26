@@ -39,8 +39,8 @@ public class DBDesignView {
   /**
    * @return the reduce to set
    */
-  public ReduceOptions setReduce(ReduceOptions reduce) {
-    return reduce;
+  public void setReduce(ReduceOptions red) {
+    this.reduce = red;
   }
 
   /**
@@ -50,7 +50,7 @@ public class DBDesignView {
     this.map = map;
   }
 
-  public static DBDesignView fromJson(JsonObject jsonObj) {
+  public static DBDesignView fromJson(JsonObject jsonObj, String viewName) {
     DBDesignView returnDesignView = new DBDesignView();
     String map = jsonObj.getString("map", "");
     String reduceString = jsonObj.getString("reduce", "");
@@ -76,6 +76,7 @@ public class DBDesignView {
         break;
     }
     returnDesignView.setMap(map);
+    returnDesignView.setViewName(viewName);
     returnDesignView.setReduce(finalReduce);
     return returnDesignView;
   }

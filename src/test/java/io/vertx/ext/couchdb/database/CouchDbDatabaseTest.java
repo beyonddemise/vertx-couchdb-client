@@ -34,6 +34,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.CouchdbClient;
+import io.vertx.ext.couchdb.database.designdoc.DBDesignDoc;
+import io.vertx.ext.couchdb.database.designdoc.DBDesignView;
+import io.vertx.ext.couchdb.database.designdoc.ReduceOptions;
 import io.vertx.ext.couchdb.database.security.DBSecurity;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
 import io.vertx.ext.couchdb.testannotations.UnitTest;
@@ -262,6 +265,94 @@ class CouchDbDatabaseTest {
         .onFailure(err -> testContext.failNow(err));
 
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void testGetDesignDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
+    DBDesignDoc designDoc = new DBDesignDoc();
+    DBDesignView view1 = new DBDesignView();
+    view1.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view1.setReduce(ReduceOptions.COUNT);
+    designDoc.setName("test-design-doc");
+    designDoc.setLanguage("javascript");
+    designDoc.getViews().put("test-view", view1);
+
+    JsonObject res = designDoc.toJson();
+
+    res.put("_id", "some_id");
+    res.put("_rev", "some_rev");
+    when(mockClient.getJsonObject(any(), any()))
+        .thenReturn(Future.succeededFuture(res));
+
+
+    database.getDesignDocument("test-design-doc", null)
+        .onSuccess(result -> testContext.verify(() -> {
+          assertNotNull(result);
+          assertEquals(result.getViews().size(), 1);
+          assertEquals(result.getViews().get("test-view").getMap(), "function (doc) {\\n" + //
+              " emit(doc._id, 1);\\n" + //
+              "}");
+          assertEquals(result.getViews().get("test-view").getReduce().getValue(), "_count");
+          assertEquals(result.getViews().get("test-view").getViewName(), "test-view");
+          assertEquals(result.getLanguage(), "javascript");
+
+          // to json test
+          JsonObject resObj = result.toJson();
+          System.out.println(resObj.toString());
+          JsonObject viewsObj = resObj.getJsonObject("views", new JsonObject());
+          assertEquals(viewsObj.getJsonObject("test-view", new JsonObject()).getString("map"),
+              "function (doc) {\\n" + //
+                  " emit(doc._id, 1);\\n" + //
+                  "}");
+          assertEquals(viewsObj.getJsonObject("test-view", new JsonObject()).getString("reduce",
+              ""),
+              "_count");
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void testCreateDesignDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
+    DBDesignDoc designDoc = new DBDesignDoc();
+    DBDesignView view1 = new DBDesignView();
+    view1.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view1.setReduce(ReduceOptions.STATS);
+    DBDesignView view2 = new DBDesignView();
+    view2.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view2.setReduce(ReduceOptions.SUM);
+    designDoc.setName("test-design-doc");
+    designDoc.setLanguage("javascript");
+    designDoc.getViews().put("test-view", view1);
+    designDoc.getViews().put("test-view2", view2);
+
+    JsonObject res = new JsonObject()
+        .put("ok", true)
+        .put("id", "_design/test-design-doc")
+        .put("rev", "somestring");
+
+    when(mockClient.putJsonObject(any(), any(), any()))
+        .thenReturn(Future.succeededFuture(res));
+
+
+    database.createDesignDocument(designDoc)
+        .onSuccess(result -> testContext.verify(() -> {
+          assertNotNull(result);
+          System.out.println("result" + result.toString());
+          // assertEquals(result.getBoolean("ok", false), true);
+          assertEquals(result.getString("id", ""), "_design/test-design-doc");
+        }))
+        .onFailure(err -> testContext.failNow(err));
+
+    assertTrue(testContext.awaitCompletion(10, TimeUnit.SECONDS));
   }
 
 }

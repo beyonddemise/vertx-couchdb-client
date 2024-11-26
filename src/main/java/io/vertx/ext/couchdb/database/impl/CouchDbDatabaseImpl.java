@@ -201,8 +201,7 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
   }
 
   @Override
-  public Future<DBDesignDoc> getDesignDoc(String designDocName) {
-    // TODO Auto-generated method stub
+  public Future<DBDesignDoc> getDesignDocument(String designDocName, DocumentGetParams options) {
     Promise<DBDesignDoc> promise = Promise.promise();
     UriTemplate urlToCheck = PathParameterTemplates.databaseDesignDoc(databaseName, designDocName);
     client.getJsonObject(urlToCheck, null)
@@ -223,9 +222,51 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
    * autoupdate (boolean): Indicates whether to automatically build indexes defined in this design
    * document. Default is true.
    */
-  @Override
-  public Future<JsonObject> createUpdateDesignDoc(DBDesignDoc designDoc) {
 
+
+  // {
+  // "ok": true,
+  // "id": "_design/newDesignDoc",
+  // "rev": "6-83b3d90e19f7ca49732fc72d8170bff5"
+  // }
+  @Override
+  public Future<JsonObject> createDesignDocument(DBDesignDoc designDoc) {
+
+    Objects.requireNonNull(designDoc);
+    if (designDoc.getName().isEmpty()) {
+      throw new RuntimeException("need design doc name");
+    }
+    JsonObject requestSecurityPayload = designDoc.toJson();
+
+    Promise<JsonObject> promise = Promise.promise();
+    UriTemplate urlToCheck =
+        PathParameterTemplates.databaseDesignDoc(databaseName, designDoc.getName());
+
+    // JsonObject result = new JsonObject();
+    this.client.putJsonObject(urlToCheck, null, requestSecurityPayload)
+        // .compose(returnJson -> {
+        // result.put("rev", returnJson.getString("rev",""));
+        // return Future
+        // })
+        // .compose() // function here to merge
+        // serverresponse
+        .onFailure(promise::fail)
+        .onSuccess(resSuccess -> {
+          System.out.println("hellooooo" + resSuccess.toString());
+          JsonObject successResponse = new JsonObject()
+              .put("ok", true)
+              .put("id", resSuccess.getString("id"))
+              .put("rev", resSuccess.getString("rev"));
+          promise.complete(successResponse);
+        }); // return serverResponse (_id, rev) and merge it to the
+            // DBDesignDoc and return
+
+    return promise.future();
+  }
+
+  public Future<JsonObject> updateDesignDocument(DBDesignDoc designDoc) {
+
+    // check _id and _rev should exist
     Objects.requireNonNull(designDoc);
     JsonObject requestSecurityPayload = designDoc.toJson();
     Promise<JsonObject> promise = Promise.promise();
