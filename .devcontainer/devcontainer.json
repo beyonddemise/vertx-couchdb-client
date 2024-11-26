@@ -15,6 +15,7 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/sshd:1": {}
   },
+  "postStartCommand": "./devcontainer/postStart.sh",
   "customizations": {
     "vscode": {
       "extensions": [
