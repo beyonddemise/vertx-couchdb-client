@@ -354,4 +354,87 @@ class CouchDbDatabaseTest {
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
+  @Test
+  void testUpdateDesignDocument(VertxTestContext testContext) throws InterruptedException {
+    DBDesignDoc designDoc = new DBDesignDoc();
+    DBDesignView view1 = new DBDesignView();
+    view1.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view1.setReduce(ReduceOptions.STATS);
+    DBDesignView view2 = new DBDesignView();
+    view2.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view2.setReduce(ReduceOptions.SUM);
+    designDoc.setName("test-design-docId");
+    designDoc.setLanguage("javascript");
+    designDoc.addView("test-view", view1);
+    designDoc.addView("test-view2", view2);
+
+    JsonObject res = new JsonObject()
+        .put("ok", true)
+        .put("id", "_design/test-design-docId")
+        .put("rev", "somestringinrevvalueAfterUpdate");
+
+    when(mockClient.putJsonObject(any(), any()))
+        .thenReturn(Future.succeededFuture(res));
+    when(mockClient.getEtag(any()))
+        .thenReturn(Future.succeededFuture("somestringinrevvalueAfterUpdate"));
+
+
+    database.updateDesignDocument(designDoc, "somestringinrevvalueAfterUpdate")
+        .onSuccess(result -> testContext.verify(() -> {
+          assertNotNull(result);
+          assertEquals(result.getBoolean("ok", false), true);
+          assertEquals(result.getString("id", ""), "_design/test-design-docId");
+          assertEquals(result.getString("rev", ""), "somestringinrevvalue");
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  @Test
+  void testDeleteDesignDocument(VertxTestContext testContext) throws InterruptedException {
+    DBDesignDoc designDoc = new DBDesignDoc();
+    DBDesignView view1 = new DBDesignView();
+    view1.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view1.setReduce(ReduceOptions.STATS);
+    DBDesignView view2 = new DBDesignView();
+    view2.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view2.setReduce(ReduceOptions.SUM);
+    designDoc.setName("test-design-docId");
+    designDoc.setLanguage("javascript");
+    designDoc.addView("test-view", view1);
+    designDoc.addView("test-view2", view2);
+
+    JsonObject res = new JsonObject()
+        .put("ok", true)
+        .put("id", "_design/test-design-docId")
+        .put("rev", "somestringinrevvalue");
+
+    when(mockClient.deleteJsonObject(any(), any()))
+        .thenReturn(Future.succeededFuture(res));
+    when(mockClient.getEtag(any())).thenReturn(Future.succeededFuture("somestringinrevvalue"));
+
+
+    database.deleteDesignDocument(designDoc, "somestringinrevvalue")
+        .onSuccess(result -> testContext.verify(() -> {
+          assertNotNull(result);
+          assertEquals(result.getBoolean("ok", false), true);
+          assertEquals(result.getString("id", ""), "_design/test-design-docId");
+          assertEquals(result.getString("rev", ""), "somestringinrevvalue");
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
 }

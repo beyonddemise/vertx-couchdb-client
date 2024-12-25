@@ -101,26 +101,6 @@ public class DBDesignDoc {
     return result;
   }
 
-  // {
-  // "_id": "_design/newDesignDoc",
-  // "_rev": "4-2978513866fe9cf18602bea96680fe6b",
-  // "views": {
-  // "sample-view": {
-  // "map": "function (doc) {\n emit(doc._id, 1);\n}"
-  // },
-  // "new-view2": {
-  // "map": "function (doc) {\n emit(doc._id, 1);\n}",
-  // "reduce": "_count"
-  // },
-  // "new-view3": {
-  // "reduce": "function (keys, values, rereduce) {\n if (rereduce) {\n return sum(values);\n } else
-  // {\n return values.length;\n }\n}",
-  // "map": "function (doc) {\n emit(doc._id, 1);\n}"
-  // }
-  // },
-  // "language": "javascript"
-  // }
-
   // updateServerResponseMerge function check ID and update the rev
 
   public static DBDesignDoc fromJson(JsonObject dbSecObject, boolean isNew) {

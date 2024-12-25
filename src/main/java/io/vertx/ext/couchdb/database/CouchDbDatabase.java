@@ -69,7 +69,7 @@ public interface CouchDbDatabase {
 
   Future<JsonObject> createDesignDocument(DBDesignDoc designDoc);
 
-  Future<JsonObject> updateDesignDocument(DBDesignDoc designDoc);
+  Future<JsonObject> updateDesignDocument(DBDesignDoc designDoc, String rev);
 
   default Future<JsonObject> deleteDesignDocument(DBDesignDoc designDoc, String rev) {
     return this.deleteDesignDocument(designDoc, rev, false);

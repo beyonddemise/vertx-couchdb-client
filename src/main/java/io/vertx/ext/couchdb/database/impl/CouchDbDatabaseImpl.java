@@ -223,12 +223,6 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
    * document. Default is true.
    */
 
-
-  // {
-  // "ok": true,
-  // "id": "_design/newDesignDoc",
-  // "rev": "6-83b3d90e19f7ca49732fc72d8170bff5"
-  // }
   @Override
   public Future<JsonObject> createDesignDocument(DBDesignDoc designDoc) {
 
@@ -242,38 +236,46 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
     UriTemplate urlToCheck =
         PathParameterTemplates.databaseDesignDoc(databaseName, designDoc.getName());
     this.client.putJsonObject(urlToCheck, null, requestSecurityPayload)
-        // .compose(returnJson -> {
-        // result.put("rev", returnJson.getString("rev",""));
-        // return Future
-        // })
-        // .compose() // function here to merge
-        // serverresponse
         .onFailure(promise::fail)
         .onSuccess(resSuccess -> {
-          System.out.println("hellooooo" + resSuccess.toString());
           JsonObject successResponse = new JsonObject()
-              .put("ok", true)
+              .put("ok", resSuccess.getBoolean("ok"))
               .put("id", resSuccess.getString("id"))
               .put("rev", resSuccess.getString("rev"));
           promise.complete(successResponse);
-        }); // return serverResponse (_id, rev) and merge it to the
-            // DBDesignDoc and return
+        });
 
     return promise.future();
   }
 
-  public Future<JsonObject> updateDesignDocument(DBDesignDoc designDoc) {
+  public Future<JsonObject> updateDesignDocument(DBDesignDoc designDoc, String rev) {
 
-    // check _id and _rev should exist
     Objects.requireNonNull(designDoc);
+    Objects.requireNonNull(rev);
     JsonObject requestSecurityPayload = designDoc.toJson();
     Promise<JsonObject> promise = Promise.promise();
+    BaseQueryParameters params = new BaseQueryParameters();
+    params.addParameter("rev", rev, true);
     UriTemplate urlToCheck =
         PathParameterTemplates.databaseDesignDoc(databaseName, designDoc.getName());
 
-    this.client.putJsonObject(urlToCheck, null, requestSecurityPayload)
-        .onFailure(promise::fail)
-        .onSuccess(promise::succeed);
+    this.client.getEtag(urlToCheck)
+        .onSuccess(curRev -> {
+          if (!curRev.equals(rev)) {
+            promise.fail("Existing rev/ETag doesn't match rev param");
+          } else {
+            this.client.putJsonObject(urlToCheck, params, requestSecurityPayload)
+                .onFailure(promise::fail)
+                .onSuccess(resSuccess -> {
+                  JsonObject successResponse = new JsonObject()
+                      .put("ok", resSuccess.getBoolean("ok"))
+                      .put("id", resSuccess.getString("id"))
+                      .put("rev", resSuccess.getString("rev"));
+                  promise.complete(successResponse);
+                });
+          }
+        })
+        .onFailure(promise::fail);
 
     return promise.future();
   }
@@ -291,7 +293,13 @@ public class CouchDbDatabaseImpl implements CouchDbDatabase {
             params.addParameter("rev", eTag);
             this.client.deleteJsonObject(urlToCheck, params)
                 .onFailure(promise::fail)
-                .onSuccess(promise::succeed);
+                .onSuccess(resSuccess -> {
+                  JsonObject successResponse = new JsonObject()
+                      .put("ok", resSuccess.getBoolean("ok"))
+                      .put("id", resSuccess.getString("id"))
+                      .put("rev", resSuccess.getString("rev"));
+                  promise.complete(successResponse);
+                });
           } else {
             promise.fail("rev / eTag mismatch");
           }
