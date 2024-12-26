@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2024 Contributors to the Eclipse Foundation
  *
@@ -244,6 +243,12 @@ class CouchDbDatabaseTest {
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
+  /**
+   * Tests successful security update operation for a database.
+   *
+   * @param testContext Vertx test context for asynchronous test execution
+   * @throws InterruptedException if the test is interrupted while waiting for completion
+   */
   @Test
   void testUpdateSecuritySuccess(VertxTestContext testContext) throws InterruptedException {
     JsonObject payload = new JsonObject()
@@ -267,6 +272,12 @@ class CouchDbDatabaseTest {
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
+  /**
+   * Tests successful retrieval of a design document from the database.
+   * 
+   * @param testContext The Vert.x test context for asynchronous test execution
+   * @throws InterruptedException if the test is interrupted while waiting for completion
+   */
   @Test
   void testGetDesignDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
     DBDesignDoc designDoc = new DBDesignDoc();
@@ -315,6 +326,12 @@ class CouchDbDatabaseTest {
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
+  /**
+   * Tests the successful creation of a design document in the database.
+   *
+   * @param testContext The Vert.x test context for asynchronous test execution
+   * @throws InterruptedException if the test is interrupted while waiting for completion
+   */
   @Test
   void testCreateDesignDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
     DBDesignDoc designDoc = new DBDesignDoc();
@@ -354,6 +371,21 @@ class CouchDbDatabaseTest {
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
+  /**
+   * Tests the update functionality of a CouchDB design document.
+   *
+   * @param testContext The Vert.x test context for asynchronous test execution
+   * @throws InterruptedException if the test execution is interrupted while waiting for completion
+   *
+   * This test verifies that:
+   * - Design document creation with multiple views
+   * - Proper setting of map/reduce functions
+   * - Successful update with correct ETag handling
+   * - Response validation including document ID and revision
+   *
+   * The test sets up a design document with two views using different reduce functions
+   * (STATS and SUM) and verifies the update operation through mock client responses.
+   */
   @Test
   void testUpdateDesignDocument(VertxTestContext testContext) throws InterruptedException {
     DBDesignDoc designDoc = new DBDesignDoc();
@@ -396,6 +428,18 @@ class CouchDbDatabaseTest {
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
+  /**
+   * Tests the deletion of a design document from the database.
+   *
+   * @param testContext The Vert.x test context for asynchronous test execution
+   * @throws InterruptedException if the test is interrupted while waiting for completion
+   *
+   * This test verifies that:
+   * - A design document with multiple views can be deleted successfully
+   * - The mock client returns the expected response
+   * - The response contains correct values for 'ok', 'id', and 'rev' fields
+   * - The deletion operation completes within the specified timeout
+   */
   @Test
   void testDeleteDesignDocument(VertxTestContext testContext) throws InterruptedException {
     DBDesignDoc designDoc = new DBDesignDoc();

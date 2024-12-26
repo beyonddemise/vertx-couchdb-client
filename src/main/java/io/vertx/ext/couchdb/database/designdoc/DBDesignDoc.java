@@ -32,35 +32,59 @@ public class DBDesignDoc {
     return language;
   }
 
+  /**
+   * Gets the name value.
+   *
+   * @return the name string
+   */
   public String getName() {
     return name;
   }
 
   /**
-   * @param language the language to set
+   * Sets the name of this entity.
+   *
+   * @param name the name to set
    */
   public void setName(String name) {
     this.name = name;
   }
 
   /**
-   * @return the language
+   * Returns a map of database design views.
+   *
+   * @return a Map containing design view names as keys and their corresponding DBDesignView objects as values
    */
   public Map<String, DBDesignView> getViews() {
     return views;
   }
 
 
+  /**
+   * Removes a view from the collection of views.
+   *
+   * @param viewName the name of the view to be removed
+   */
   public void removeView(String viewName) {
     this.views.remove(viewName);
   }
 
+  /**
+   * Adds a database design view to the collection with the specified name.
+   *
+   * @param viewName the unique name identifier for the view
+   * @param view the database design view to be added
+   * @throws NullPointerException if either viewName or view is null
+   */
   public void addView(String viewName, DBDesignView view) {
     this.views.put(viewName, view);
   }
 
   /**
-   * @param language the language to set
+   * Sets the language for this instance.
+   *
+   * @param language the language code to set (e.g., "en", "es", "fr")
+   * @throws IllegalArgumentException if language is null or empty
    */
   public void setLanguage(String language) {
     this.language = language;
@@ -74,12 +98,23 @@ public class DBDesignDoc {
   }
 
   /**
-   * @return the _rev
+   * Gets the revision identifier of the document.
+   *
+   * @return the revision string that identifies the current version of the document
    */
   public String getRev() {
     return _rev;
   }
 
+  /**
+   * Converts the design document to a JSON representation compatible with CouchDB format.
+   *
+   * @return A JsonObject containing the design document properties including:
+   *         - _id: The document ID prefixed with "_design/" if not already set
+   *         - _rev: The document revision
+   *         - language: The language used for views
+   *         - views: An object containing all views with their map and reduce functions
+   */
   public JsonObject toJson() {
     JsonObject result = new JsonObject();
     // if new Json need to figure out how to have id and rev
@@ -101,7 +136,16 @@ public class DBDesignDoc {
     return result;
   }
 
-  // updateServerResponseMerge function check ID and update the rev
+  /**
+   * Converts a JsonObject representation of a design document into a DBDesignDoc object.
+   *
+   * @param dbSecObject The JsonObject containing the design document data. Must contain '_id' and '_rev'
+   *                    fields if isNew is false.
+   * @param isNew       Indicates if this is a new document. If false, '_id' and '_rev' fields are required
+   *                    and validated.
+   * @return A new DBDesignDoc instance populated with data from the JsonObject.
+   * @throws NullPointerException if dbSecObject is null, or if '_id' or '_rev' are null when isNew is false
+   */
 
   public static DBDesignDoc fromJson(JsonObject dbSecObject, boolean isNew) {
     if (!isNew) {
@@ -131,6 +175,13 @@ public class DBDesignDoc {
     return dbDesignDoc;
   }
 
+  /**
+   * Creates a DBDesignDoc instance from a JSON object representation.
+   *
+   * @param dbSecObject the JsonObject containing the database design document data
+   * @return a new DBDesignDoc instance populated with the JSON data
+   * @throws IllegalArgumentException if the JSON object is invalid or missing required fields
+   */
   public static DBDesignDoc fromJson(JsonObject dbSecObject) {
     return DBDesignDoc.fromJson(dbSecObject, false);
   }

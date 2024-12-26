@@ -18,6 +18,14 @@ import io.vertx.ext.web.client.WebClient;
 
 public class CouchDbClientExample {
 
+  /**
+   * Creates and initializes a CouchDB client using the provided Vertx instance.
+   *
+   * @param vertx the Vertx instance used to create the WebClient and CouchDB client
+   * @throws NullPointerException if vertx parameter is null
+   * @see io.vertx.ext.web.client.WebClient
+   * @see CouchdbClient
+   */
   public void create(Vertx vertx) {
     WebClient webClient = WebClient.create(vertx);
     CouchdbClientBuilder builder = new CouchdbClientBuilder(vertx, webClient);
