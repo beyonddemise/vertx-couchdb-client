@@ -53,7 +53,8 @@ public class DBDesignDoc {
   /**
    * Returns a map of database design views.
    *
-   * @return a Map containing design view names as keys and their corresponding DBDesignView objects as values
+   * @return a Map containing design view names as keys and their corresponding DBDesignView objects
+   *         as values
    */
   public Map<String, DBDesignView> getViews() {
     return views;
@@ -139,24 +140,28 @@ public class DBDesignDoc {
   /**
    * Converts a JsonObject representation of a design document into a DBDesignDoc object.
    *
-   * @param dbSecObject The JsonObject containing the design document data. Must contain '_id' and '_rev'
-   *                    fields if isNew is false.
-   * @param isNew       Indicates if this is a new document. If false, '_id' and '_rev' fields are required
-   *                    and validated.
+   * @param dbSecObject The JsonObject containing the design document data. Must contain '_id' and
+   *        '_rev'
+   *        fields if isNew is false.
+   * @param isNew Indicates if this is a new document. If false, '_id' and '_rev' fields are
+   *        required
+   *        and validated.
    * @return A new DBDesignDoc instance populated with data from the JsonObject.
-   * @throws NullPointerException if dbSecObject is null, or if '_id' or '_rev' are null when isNew is false
+   * @throws NullPointerException if dbSecObject is null, or if '_id' or '_rev' are null when isNew
+   *         is false
    */
 
   public static DBDesignDoc fromJson(JsonObject dbSecObject, boolean isNew) {
+
+    Objects.requireNonNull(dbSecObject);
     if (!isNew) {
       // id and rev
       Objects.requireNonNull(dbSecObject.getString("_id"));
       Objects.requireNonNull(dbSecObject.getString("_rev"));
     }
-    Objects.requireNonNull(dbSecObject);
     DBDesignDoc dbDesignDoc = new DBDesignDoc();
-    dbDesignDoc._id = dbSecObject.getString("_id", "");
-    dbDesignDoc._rev = dbSecObject.getString("_rev", "");
+    dbDesignDoc._id = dbSecObject.getString("_id");
+    dbDesignDoc._rev = dbSecObject.getString("_rev");
     dbDesignDoc.language = dbSecObject.getString("language", "");
     JsonObject viewsObject = dbSecObject.getJsonObject("views", new JsonObject());
 

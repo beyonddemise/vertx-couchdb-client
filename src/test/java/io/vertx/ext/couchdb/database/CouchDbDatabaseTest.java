@@ -274,7 +274,7 @@ class CouchDbDatabaseTest {
 
   /**
    * Tests successful retrieval of a design document from the database.
-   * 
+   *
    * @param testContext The Vert.x test context for asynchronous test execution
    * @throws InterruptedException if the test is interrupted while waiting for completion
    */
@@ -376,15 +376,13 @@ class CouchDbDatabaseTest {
    *
    * @param testContext The Vert.x test context for asynchronous test execution
    * @throws InterruptedException if the test execution is interrupted while waiting for completion
-   *
-   * This test verifies that:
-   * - Design document creation with multiple views
-   * - Proper setting of map/reduce functions
-   * - Successful update with correct ETag handling
-   * - Response validation including document ID and revision
-   *
-   * The test sets up a design document with two views using different reduce functions
-   * (STATS and SUM) and verifies the update operation through mock client responses.
+   *         This test verifies that:
+   *         - Design document creation with multiple views
+   *         - Proper setting of map/reduce functions
+   *         - Successful update with correct ETag handling
+   *         - Response validation including document ID and revision
+   *         The test sets up a design document with two views using different reduce functions
+   *         (STATS and SUM) and verifies the update operation through mock client responses.
    */
   @Test
   void testUpdateDesignDocument(VertxTestContext testContext) throws InterruptedException {
@@ -409,7 +407,7 @@ class CouchDbDatabaseTest {
         .put("id", "_design/test-design-docId")
         .put("rev", "somestringinrevvalueAfterUpdate");
 
-    when(mockClient.putJsonObject(any(), any()))
+    when(mockClient.putJsonObject(any(), any(), any()))
         .thenReturn(Future.succeededFuture(res));
     when(mockClient.getEtag(any()))
         .thenReturn(Future.succeededFuture("somestringinrevvalueAfterUpdate"));
@@ -420,7 +418,7 @@ class CouchDbDatabaseTest {
           assertNotNull(result);
           assertEquals(result.getBoolean("ok", false), true);
           assertEquals(result.getString("id", ""), "_design/test-design-docId");
-          assertEquals(result.getString("rev", ""), "somestringinrevvalue");
+          assertEquals(result.getString("rev", ""), "somestringinrevvalueAfterUpdate");
           testContext.completeNow();
         }))
         .onFailure(err -> testContext.failNow(err));
@@ -433,12 +431,11 @@ class CouchDbDatabaseTest {
    *
    * @param testContext The Vert.x test context for asynchronous test execution
    * @throws InterruptedException if the test is interrupted while waiting for completion
-   *
-   * This test verifies that:
-   * - A design document with multiple views can be deleted successfully
-   * - The mock client returns the expected response
-   * - The response contains correct values for 'ok', 'id', and 'rev' fields
-   * - The deletion operation completes within the specified timeout
+   *         This test verifies that:
+   *         - A design document with multiple views can be deleted successfully
+   *         - The mock client returns the expected response
+   *         - The response contains correct values for 'ok', 'id', and 'rev' fields
+   *         - The deletion operation completes within the specified timeout
    */
   @Test
   void testDeleteDesignDocument(VertxTestContext testContext) throws InterruptedException {
@@ -478,7 +475,7 @@ class CouchDbDatabaseTest {
         }))
         .onFailure(err -> testContext.failNow(err));
 
-    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+    assertTrue(testContext.awaitCompletion(1, TimeUnit.SECONDS));
   }
 
 }

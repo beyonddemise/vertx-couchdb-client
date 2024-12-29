@@ -1,0 +1,20 @@
+meta {
+  name: deleteDesignDocument
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{host}}/security-example/_design/newnewnew?rev=someRevhere
+  body: none
+  auth: basic
+}
+
+params:query {
+  rev: someRevhere
+}
+
+auth:basic {
+  username: admin
+  password: password
+}

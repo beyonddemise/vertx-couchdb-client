@@ -1,0 +1,22 @@
+meta {
+  name: getStatus
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}
+  body: none
+  auth: none
+}
+
+vars:post-response {
+  version: res.body.version
+}
+
+assert {
+  version: eq 3.4.2
+  res.status: eq 200
+  res.body: isJson
+  res.body.vendor: isDefined
+}
