@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2024 Contributors to the Eclipse Foundation
  *
@@ -19,18 +18,24 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.couchdb.CouchdbClient;
+import io.vertx.ext.couchdb.database.designdoc.DBDesignDoc;
+import io.vertx.ext.couchdb.database.designdoc.DBDesignView;
+import io.vertx.ext.couchdb.database.designdoc.ReduceOptions;
 import io.vertx.ext.couchdb.database.security.DBSecurity;
 import io.vertx.ext.couchdb.parameters.DocumentGetParams;
 import io.vertx.ext.couchdb.testannotations.UnitTest;
@@ -238,6 +243,12 @@ class CouchDbDatabaseTest {
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
   }
 
+  /**
+   * Tests successful security update operation for a database.
+   *
+   * @param testContext Vertx test context for asynchronous test execution
+   * @throws InterruptedException if the test is interrupted while waiting for completion
+   */
   @Test
   void testUpdateSecuritySuccess(VertxTestContext testContext) throws InterruptedException {
     JsonObject payload = new JsonObject()
@@ -259,6 +270,212 @@ class CouchDbDatabaseTest {
         .onFailure(err -> testContext.failNow(err));
 
     assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  /**
+   * Tests successful retrieval of a design document from the database.
+   *
+   * @param testContext The Vert.x test context for asynchronous test execution
+   * @throws InterruptedException if the test is interrupted while waiting for completion
+   */
+  @Test
+  void testGetDesignDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
+    DBDesignDoc designDoc = new DBDesignDoc();
+    DBDesignView view1 = new DBDesignView();
+    view1.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view1.setReduce(ReduceOptions.COUNT);
+    designDoc.setName("test-design-doc");
+    designDoc.setLanguage("javascript");
+    designDoc.getViews().put("test-view", view1);
+
+    JsonObject res = designDoc.toJson();
+
+    res.put("_id", "some_id");
+    res.put("_rev", "some_rev");
+    when(mockClient.getJsonObject(any(), any()))
+        .thenReturn(Future.succeededFuture(res));
+
+
+    database.getDesignDocument("test-design-doc")
+        .onSuccess(result -> testContext.verify(() -> {
+          assertNotNull(result);
+          assertEquals(result.getViews().size(), 1);
+          assertEquals(result.getViews().get("test-view").getMap(), "function (doc) {\\n" + //
+              " emit(doc._id, 1);\\n" + //
+              "}");
+          assertEquals(result.getViews().get("test-view").getReduce().getValue(), "_count");
+          assertEquals(result.getViews().get("test-view").getViewName(), "test-view");
+          assertEquals(result.getLanguage(), "javascript");
+
+          // to json test
+          JsonObject resObj = result.toJson();
+          JsonObject viewsObj = resObj.getJsonObject("views", new JsonObject());
+          assertEquals(viewsObj.getJsonObject("test-view", new JsonObject()).getString("map"),
+              "function (doc) {\\n" + //
+                  " emit(doc._id, 1);\\n" + //
+                  "}");
+          assertEquals(viewsObj.getJsonObject("test-view", new JsonObject()).getString("reduce",
+              ""),
+              "_count");
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  /**
+   * Tests the successful creation of a design document in the database.
+   *
+   * @param testContext The Vert.x test context for asynchronous test execution
+   * @throws InterruptedException if the test is interrupted while waiting for completion
+   */
+  @Test
+  void testCreateDesignDocumentSuccess(VertxTestContext testContext) throws InterruptedException {
+    DBDesignDoc designDoc = new DBDesignDoc();
+    DBDesignView view1 = new DBDesignView();
+    view1.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view1.setReduce(ReduceOptions.STATS);
+    DBDesignView view2 = new DBDesignView();
+    view2.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view2.setReduce(ReduceOptions.SUM);
+    designDoc.setName("test-design-doc");
+    designDoc.setLanguage("javascript");
+    designDoc.addView("test-view", view1);
+    designDoc.addView("test-view2", view2);
+
+    JsonObject res = new JsonObject()
+        .put("ok", true)
+        .put("id", "_design/test-design-doc")
+        .put("rev", "somestring");
+
+    when(mockClient.putJsonObject(any(), any(), any()))
+        .thenReturn(Future.succeededFuture(res));
+
+
+    database.createDesignDocument(designDoc)
+        .onSuccess(result -> testContext.verify(() -> {
+          assertNotNull(result);
+          assertEquals(result.getBoolean("ok", false), true);
+          assertEquals(result.getString("id", ""), "_design/test-design-doc");
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  /**
+   * Tests the update functionality of a CouchDB design document.
+   *
+   * @param testContext The Vert.x test context for asynchronous test execution
+   * @throws InterruptedException if the test execution is interrupted while waiting for completion
+   *         This test verifies that:
+   *         - Design document creation with multiple views
+   *         - Proper setting of map/reduce functions
+   *         - Successful update with correct ETag handling
+   *         - Response validation including document ID and revision
+   *         The test sets up a design document with two views using different reduce functions
+   *         (STATS and SUM) and verifies the update operation through mock client responses.
+   */
+  @Test
+  void testUpdateDesignDocument(VertxTestContext testContext) throws InterruptedException {
+    DBDesignDoc designDoc = new DBDesignDoc();
+    DBDesignView view1 = new DBDesignView();
+    view1.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view1.setReduce(ReduceOptions.STATS);
+    DBDesignView view2 = new DBDesignView();
+    view2.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view2.setReduce(ReduceOptions.SUM);
+    designDoc.setName("test-design-docId");
+    designDoc.setLanguage("javascript");
+    designDoc.addView("test-view", view1);
+    designDoc.addView("test-view2", view2);
+
+    JsonObject res = new JsonObject()
+        .put("ok", true)
+        .put("id", "_design/test-design-docId")
+        .put("rev", "somestringinrevvalueAfterUpdate");
+
+    when(mockClient.putJsonObject(any(), any(), any()))
+        .thenReturn(Future.succeededFuture(res));
+    when(mockClient.getEtag(any()))
+        .thenReturn(Future.succeededFuture("somestringinrevvalueAfterUpdate"));
+
+
+    database.updateDesignDocument(designDoc, "somestringinrevvalueAfterUpdate")
+        .onSuccess(result -> testContext.verify(() -> {
+          assertNotNull(result);
+          assertEquals(result.getBoolean("ok", false), true);
+          assertEquals(result.getString("id", ""), "_design/test-design-docId");
+          assertEquals(result.getString("rev", ""), "somestringinrevvalueAfterUpdate");
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
+
+    assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+  }
+
+  /**
+   * Tests the deletion of a design document from the database.
+   *
+   * @param testContext The Vert.x test context for asynchronous test execution
+   * @throws InterruptedException if the test is interrupted while waiting for completion
+   *         This test verifies that:
+   *         - A design document with multiple views can be deleted successfully
+   *         - The mock client returns the expected response
+   *         - The response contains correct values for 'ok', 'id', and 'rev' fields
+   *         - The deletion operation completes within the specified timeout
+   */
+  @Test
+  void testDeleteDesignDocument(VertxTestContext testContext) throws InterruptedException {
+    DBDesignDoc designDoc = new DBDesignDoc();
+    DBDesignView view1 = new DBDesignView();
+    view1.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view1.setReduce(ReduceOptions.STATS);
+    DBDesignView view2 = new DBDesignView();
+    view2.setMap("function (doc) {\\n" + //
+        " emit(doc._id, 1);\\n" + //
+        "}");
+    view2.setReduce(ReduceOptions.SUM);
+    designDoc.setName("test-design-docId");
+    designDoc.setLanguage("javascript");
+    designDoc.addView("test-view", view1);
+    designDoc.addView("test-view2", view2);
+
+    JsonObject res = new JsonObject()
+        .put("ok", true)
+        .put("id", "_design/test-design-docId")
+        .put("rev", "somestringinrevvalue");
+
+    when(mockClient.deleteJsonObject(any(), any()))
+        .thenReturn(Future.succeededFuture(res));
+    when(mockClient.getEtag(any())).thenReturn(Future.succeededFuture("somestringinrevvalue"));
+
+
+    database.deleteDesignDocument(designDoc, "somestringinrevvalue")
+        .onSuccess(result -> testContext.verify(() -> {
+          assertNotNull(result);
+          assertEquals(result.getBoolean("ok", false), true);
+          assertEquals(result.getString("id", ""), "_design/test-design-docId");
+          assertEquals(result.getString("rev", ""), "somestringinrevvalue");
+          testContext.completeNow();
+        }))
+        .onFailure(err -> testContext.failNow(err));
+
+    assertTrue(testContext.awaitCompletion(1, TimeUnit.SECONDS));
   }
 
 }

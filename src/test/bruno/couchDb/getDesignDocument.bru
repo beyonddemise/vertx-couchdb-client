@@ -1,0 +1,16 @@
+meta {
+  name: getDesignDocument
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{host}}/security-example/_design/newnewnew/
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: admin
+  password: password
+}
