@@ -8,7 +8,11 @@
             "type": "java",
             "name": "Current File",
             "request": "launch",
-            "mainClass": "${file}"
+            "mainClass": "${file}",
+            "vmArgs": "-ea",
+            "console": "internalConsole",
+            "stopOnEntry": false,
+            "sourcePaths": ["${workspaceFolder}/src/main/java"]
         }
     ]
 }
